@@ -68,6 +68,8 @@ extern void API_close(void);
  */
 extern int ASM_Store(unsigned int address, unsigned char pixel_data);
 
+extern int ASM_Load(unsigned int address);
+
 /**
  * @brief Envia um comando NOP (Refresh) para o FPGA (assíncrono).
  * (Baseado na sua função 'ASM_Refresh', mas usando o pulso seguro).

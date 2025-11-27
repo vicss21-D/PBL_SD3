@@ -412,36 +412,13 @@ int main() {
                 }
                 break;
 
-            // --- OPÇÃO 4: Enviar Imagem (C -> FPGA) ---
-            //case 4:
-            //    if (!api_inicializada) {
-            //        printf("ERRO: Inicialize a API primeiro (Opcao 1).\n");
-            //        break;
-            //    }
-            //    if (!img_carregada_c) {
-            //        printf("ERRO: Nenhuma imagem no buffer C. Carregue (2) ou gere (3) primeiro.\n");
-            //        break;
-            //    }    if (ASM_Get_Flag_Min_Zoom() == 1) {
-            //            printf("ERRO: A 'Flag de Uso Minimo' (Min_Zoom) esta ATIVA.\n");
-            //            printf("   Nao e possivel executar este algoritmo.\n");
-            //            printf("   Tente um 'Reset' (Opcao 10) para limpar as flags.\n");
-            //            break;
-            //        }
-            //    printf("=== PASSO 3: Enviando Imagem para FPGA ===\n");
-            //    if (enviar_imagem_para_fpga(image_data) == 0) {
-            //        printf(">>> SUCESSO: Imagem enviada para a executar_algoritmoVRAM do FPGA.\n");
-            //        img_enviada_fpga = 1;
-            //    } else {
-            //        printf("ERRO FATAL: Falha ao enviar imagem para o FPGA.\n");
-            //        // Se falhar, melhor fechar
-            //        goto cleanup_error;
-            //    }
-            //    break;
-
+            // --- OPÇÃO 4: Carregar Imagem (FPGA -> C) ---
+            case 4:
+                
             // --- OPÇÕES 5-8 (Algoritmos) e 10 (Reset) ---
             
-            case 4: // NearestNeighbor
-            case 5: // PixelReplication
+            case 5: // NearestNeighbor
+            case 6: // PixelReplication
                 if (!api_inicializada) {
                     printf("ERRO: Inicialize a API primeiro (Opcao 1).\n");
                     break;
@@ -478,8 +455,8 @@ int main() {
                 }
                 break;
 
-            case 6: // Decimation
-            case 7: // BlockAveraging
+            case 7: // Decimation
+            case 8: // BlockAveraging
                 if (!api_inicializada) {
                     printf("ERRO: Inicialize a API primeiro (Opcao 1).\n");
                     break;
@@ -517,7 +494,7 @@ int main() {
                 break;
 
             // --- OPÇÃO 9: Atualizar (Refresh) ---
-            case 8:
+            case 9:
                 if (!api_inicializada) {
                     printf("ERRO: Inicialize a API primeiro (Opcao 1).\n");
                     break;
@@ -529,7 +506,7 @@ int main() {
                 printf("   [C] Comando Refresh enviado.\n");
                 break;
 
-            case 9:
+            case 10:
                 flag_deu_zoom_in = 0;
                 flag_deu_zoom_out = 0;
                 reset_temporario();
