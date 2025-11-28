@@ -233,7 +233,7 @@ ASM_Store:
     LSL     R3, R0, #3          
     ORR     R2, R2, R3
 
-    MOV     R3, #1
+    MOV     R3, #0
     @ SELECTION MEMORY BIT
     LSL     R3, R3, #20
     ORR     R2, R2, R3
@@ -243,6 +243,7 @@ ASM_Store:
     
     STR     R2, [R4, #PIO_INSTR_OFS]
     DMB     sy
+
     BL      _pulse_enable_safe
 
     MOV     R5, #TIMEOUT_LIMIT
@@ -289,15 +290,26 @@ ASM_Store:
 
 ASM_Load:
     PUSH    {R4-R6, LR}
-    LDR     R4, =FPGA_ADRS
+    LDR     R4, =lw_bridge_ptr
     LDR     R4, [R4]
     CMP     R0, #IMAGE_SIZE
     BHS     .RD_INVALID_ADDRESS
 
 .ASM_RD_PACKET_CONSTRUCTION:
 
-    MOV     R0, #INSTR_LOAD
-    BL      _ASM_Set_Instruction
+    @ OPCODE
+    MOV     R2, #INSTR_LOAD
+
+    @ ADDRESS
+    LSL     R3, R0, #3          
+    ORR     R2, R2, R3
+
+    MOV     R3, #0
+    @ SELECTION MEMORY BIT
+    LSL     R3, R3, #20
+    ORR     R2, R2, R3
+    
+    STR     R2, [R4, #PIO_INSTR_OFS]
 
     DMB     sy
 
