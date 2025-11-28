@@ -21,11 +21,11 @@
     FPGA_BRIDGE_SPAN: .word 0x00001000 @ 4 KB
 
     @ --- PIOs OFFSETS (Qsys) ---
-    .equ PIO_INSTR_OFS,    0x00
-    .equ PIO_ENABLE,       0x10
-    .equ PIO_FLAGS_OFS,    0x20
-    .equ PIO_DATAOUT_OFS,  0x30
-    .equ PIO_MEMSELECT,    0x40
+    .equ PIO_INSTR_OFS,      0x00
+    .equ PIO_ENABLE_OFS,     0x10
+    .equ PIO_FLAGS_OFS,      0x20
+    .equ PIO_DATAOUT_OFS,    0x30
+    .equ PIO_MEMSELECT_OFS,  0x40
 
     @ --- INSTRUCTIONS ---
     .equ INSTR_NOP,        0
@@ -88,9 +88,9 @@ _pulse_enable_safe:
     LDR     R4, [R4]        @ R4 = ponteiro base
 
     MOV     R2, #1
-    STR     R2, [R4, #PIO_ENABLE]
+    STR     R2, [R4, #PIO_ENABLE_OFS]
     MOV     R2, #0
-    STR     R2, [R4, #PIO_ENABLE]
+    STR     R2, [R4, #PIO_ENABLE_OFS]
     
     POP     {R2, R3, R4}
     BX      LR
@@ -287,6 +287,11 @@ ASM_Store:
 .type ASM_Load, %function
 
 @FIX LOAD INSTRUCTION
+@@FUNCTION FIXED, REMAINING TESTS PENDING
+
+@ --- ASM_Load (R0=address) ---
+@ BLOCKING FUNCTION - !
+@ Uses _pulse_enable and _wait_for_done
 
 ASM_Load:
     PUSH    {R4-R6, LR}
@@ -410,7 +415,7 @@ ASM_SetPrimaryMemory:
     LDR     r4, [r4]            
 
     MOV     r0, #0
-    STR     r0, [r4, #PIO_MEMSELECT] @ Writes 0 to PIO_MEMSELECT
+    STR     r0, [r4, #PIO_MEMSELECT_OFS] @ Writes 0 to PIO_MEMSELECT
     
     POP     {r0, r4, pc}
 .size ASM_SetPrimaryMemory, .-ASM_SetPrimaryMemory
@@ -425,7 +430,7 @@ ASM_SetSecondaryMemory:
     LDR     r4, [r4]            
 
     MOV     r0, #1
-    STR     r0, [r4, #PIO_MEMSELECT] @ Writes 1 to PIO_MEMSELECT
+    STR     r0, [r4, #PIO_MEMSELECT_OFS] @ Writes 1 to PIO_MEMSELECT
     
     POP     {r0, r4, pc}
 .size ASM_SetSecondaryMemory, .-ASM_SetSecondaryMemory
