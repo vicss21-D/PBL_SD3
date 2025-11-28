@@ -96,7 +96,7 @@ _pulse_enable_safe:
     BX      LR
     
 @ _ASM_Set_Instruction: Internal function
-@ ONLY sets the inSTRuction opcode in PIO_INSTR (no pulse or wait)
+@ ONLY sets the instruction opcode in PIO_INSTR (no pulse or wait)
 @ R0 = opcode
 
 _ASM_Set_Instruction:
@@ -111,8 +111,8 @@ _ASM_Set_Instruction:
     BX LR                    @ Returns (e.g from NearestNeighBor)
 
 @ _ASM_Get_Flag: Internal function
-@ Retorna 1 se a flag (passada em R0) estiver ativa, 0 se não
-@ Recebe: R0 = Máscara da Flag (ex: FLAG_DONE_MASK)
+@ Returns 1 if flag (given in R0) is high, 0 if not
+@ Receives: R0 = mask flag (e.g FLAG_DONE_MASK)
 
 _ASM_Get_Flag:
     PUSH {R1, R3, R4}
