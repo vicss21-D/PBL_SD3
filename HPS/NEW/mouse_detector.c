@@ -27,11 +27,22 @@ typedef struct {
 // Função para verificar se o dispositivo tem teclas de teclado (ex: Tecla A)
 int is_keyboard(int fd) {
     unsigned long keybit[NBITS(KEY_MAX)];
-    // Pede ao kernel os bits de teclas suportadas
+    unsigned long relbit[NBITS(REL_MAX)];
+
     if (ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keybit)), keybit) < 0) return 0;
     
-    // Verifica se tem a tecla 'KEY_A' (código 30). Se tiver, provavelmente é um teclado.
-    return test_bit(KEY_A, keybit);
+    // Obtém bits de movimento relativo (para garantir que NÃO é um mouse)
+    int has_rel = 0;
+    if (ioctl(fd, EVIOCGBIT(EV_REL, sizeof(relbit)), relbit) >= 0) {
+        if (test_bit(REL_X, relbit)) has_rel = 1;
+    }
+
+    // Se tem eixos de mouse, NÃO é um teclado principal (é um mouse com macros)
+    if (has_rel) return 0;
+
+    // Verifica teclas essenciais: ESC, A, ENTER
+    // Se tiver qualquer uma dessas, e não for mouse, é teclado.
+    return (test_bit(KEY_A, keybit) || test_bit(KEY_ESC, keybit));
 }
 
 // Função para verificar se é um mouse (tem movimento relativo e botão esquerdo)
