@@ -141,13 +141,12 @@ extern int ASM_Get_Flag_Min_Zoom(void);
 /**
  * @brief Define o sinal SEL_MEM para 0 (Seleciona memória primária/original).
  */
-extern void ASM_Set_MemSel_0(void);
-
+extern void ASM_SetPrimaryMemory(void);
 
 /**
  * @brief Define o sinal SEL_MEM para 1 (Seleciona memória secundária/trabalho).
  */
-extern void ASM_Set_MemSel_1(void);
+extern void ASM_SetSecondaryMemory(void);
 
 
 #ifdef __cplusplus
