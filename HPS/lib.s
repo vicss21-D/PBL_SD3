@@ -63,6 +63,13 @@
     .equ TIMEOUT_LIMIT,    0x3500
     .equ DELAY_COUNT,      0x1000
 
+    @ --- RETURN CODES ---
+
+    .equ ERR_SUCCESS,           0   @ Operation completed successfully
+    .equ ERR_INVALID_ADDRESS,  -1   @ Address out of bounds (>= IMAGE_SIZE)
+    .equ ERR_TIMEOUT,          -2   @ Operation timed out (no response)
+    .equ ERR_HARDWARE,         -3   @ Hardware error (FLAG_ERROR set)
+
 @ ===================================================================
 @ BSS SECTION (Global Variables)
 @ ===================================================================
@@ -320,10 +327,10 @@ ASM_Load:
 
     BL     _pulse_enable_safe
 
-    MOV     R5, #TIMEOUT_COUNT
+    MOV     R5, #TIMEOUT_LIMIT
 
 .RD_POLLING:
-    LDR     R2, [R4, #PIO_FLAGS]
+    LDR     R2, [R4, #PIO_FLAGS_OFS]
     TST     R2, #FLAG_DONE_MASK
     BNE     .RD_SUCCESS
 
@@ -331,7 +338,7 @@ ASM_Load:
     BNE     .RD_POLLING
 
     MOV     R0, #-2
-    B       .EXIT_RD
+    B       .RD_EXIT
 
 .RD_SUCCESS:
     TST    R2, #FLAG_ERROR_MASK
@@ -349,7 +356,7 @@ ASM_Load:
 
 .RD_INVALID_ADDRESS:
     MOV     R0, #-1
-    B       .EXIT_RD
+    B       .RD_EXIT
 
 .RD_HW_ERROR:
     MOV     R0, #-3
@@ -410,14 +417,14 @@ NearestNeighbor:
 .global ASM_SetPrimaryMemory
 .type ASM_SetPrimaryMemory, %function
 ASM_SetPrimaryMemory:
-    PUSH    {r0, r4, lr}
-    LDR     r4, =lw_bridge_ptr
-    LDR     r4, [r4]            
+    PUSH    {R0, R4, LR}
+    LDR     R4, =lw_bridge_ptr
+    LDR     R4, [R4]            
 
-    MOV     r0, #0
-    STR     r0, [r4, #PIO_MEMSELECT_OFS] @ Writes 0 to PIO_MEMSELECT
+    MOV     R0, #0
+    STR     R0, [R4, #PIO_MEMSELECT_OFS] @ Writes 0 to PIO_MEMSELECT
     
-    POP     {r0, r4, pc}
+    POP     {R0, R4, PC}
 .size ASM_SetPrimaryMemory, .-ASM_SetPrimaryMemory
 
 @ --- ASM_SetSecondaryMemory (void) ---
@@ -425,14 +432,14 @@ ASM_SetPrimaryMemory:
 .global ASM_SetSecondaryMemory
 .type ASM_SetSecondaryMemory, %function
 ASM_SetSecondaryMemory:
-    PUSH    {r0, r4, lr}
-    LDR     r4, =lw_bridge_ptr
-    LDR     r4, [r4]            
+    PUSH    {R0, R4, LR}
+    LDR     R4, =lw_bridge_ptr
+    LDR     R4, [R4]            
 
-    MOV     r0, #1
-    STR     r0, [r4, #PIO_MEMSELECT_OFS] @ Writes 1 to PIO_MEMSELECT
+    MOV     R0, #1
+    STR     R0, [R4, #PIO_MEMSELECT_OFS] @ Writes 1 to PIO_MEMSELECT
     
-    POP     {r0, r4, pc}
+    POP     {R0, R4, PC}
 .size ASM_SetSecondaryMemory, .-ASM_SetSecondaryMemory
 
 @ --- PixelReplication (void) ---
