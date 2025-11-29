@@ -2,6 +2,7 @@
 #define MOUSE_UTILS_H
 
 #include <linux/input.h>
+#include <dirent.h>
 
 /*
  * --- MACROS DE UTILITIES PARA TESTE DE BITS ---

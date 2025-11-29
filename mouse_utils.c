@@ -3,14 +3,18 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <dirent.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
+#include <linux/input.h>
 
 #include "mouse_utils.h"
 
 // Tamanho máximo do buffer de caminho/nome
 #define MAX_PATH_LEN 256
+
+#define NBITS(x) ((((x)-1)/BITS_PER_LONG)+1)
+#define BITS_PER_LONG (sizeof(long) * 8)
+#define test_bit(bit, array) ((array[bit/BITS_PER_LONG] >> (bit%BITS_PER_LONG)) & 1)
 
 /*
  * --- FUNÇÕES DE UTILITY DE DISPOSITIVO (is_mouse) ---
