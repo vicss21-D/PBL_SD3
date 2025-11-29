@@ -1,7 +1,10 @@
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <dirent.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
@@ -14,7 +17,7 @@
 
 #define NBITS(x) ((((x)-1)/BITS_PER_LONG)+1)
 #define BITS_PER_LONG (sizeof(long) * 8)
-#define test_bit(bit, array) ((array[bit/BITS_PER_LONG] >> (bit%BITS_PER_LONG)) & 1)
+//#define test_bit(bit, array) ((array[bit/BITS_PER_LONG] >> (bit%BITS_PER_LONG)) & 1)
 
 /*
  * --- FUNÇÕES DE UTILITY DE DISPOSITIVO (is_mouse) ---
@@ -44,7 +47,7 @@ int find_and_open_mouse(char *device_path_out, char *name_out) {
     
     printf("Varrendo dispositivos em /dev/input/...\n");
 
-    n = scandir("/dev/input", &namelist, NULL, alphasort);
+    n = scandir("/dev/input", &namelist, NULL, NULL);
     if (n < 0) {
         perror("scandir");
         return -1;

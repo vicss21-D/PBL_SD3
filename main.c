@@ -161,7 +161,7 @@ int enviar_imagem_para_fpga(uint8_t *image_data) {
     printf("   [C] Envio de pixels OK.\n");
     printf("   [C] Testando ASM_Refresh()...\n");
     ASM_Refresh();
-    usleep(100000);
+    //usleep(100000);
 
     if (errors > 0) {
         printf("   [C] ERRO: %d falhas de escrita de pixel.\n", errors);
@@ -179,7 +179,7 @@ int executar_algoritmo(const char *nome_algoritmo, void (*funcao_algoritmo)(void
 
     int timeout_c = 0;
     while (ASM_Get_Flag_Done() == 0) {
-        usleep(100000);
+        //usleep(100000);
         timeout_c++;
        
         if (timeout_c > C_TIMEOUT_LOOPS) {
@@ -356,6 +356,7 @@ void reset_temporario(void) {
  * MAIN INTERATIVO
  * =================================================================== */
 int main(void) {
+    printf("Entrou na main\n");
     int api_inicializada = 0;
     int img_carregada_c = 0;
     int img_enviada_fpga = 0;
@@ -393,7 +394,10 @@ int main(void) {
                     printf("AVISO: A API ja esta inicializada.\n");
                 } else {
                     printf("=== PASSO 1: Inicializando API (API_initialize) ===\n");
-                    void *result = API_initialize();
+                    
+                    // CORREÇÃO: Adicione 'volatile' ao tipo do ponteiro
+                    volatile void *result = API_initialize(); 
+                    
                     if (result == (void*)-1 || result == (void*)-2) {
                         printf("ERRO FATAL: API_initialize falhou. Verifique o sudo e o mmap.\n");
                         free(image_data);
@@ -608,7 +612,7 @@ int main(void) {
                 printf("=== EXECUTANDO: ASM_Refresh ===\n");
                 printf("   [C] Enviando comando ASM_Refresh() (NOP)...\n");
                 ASM_Refresh();
-                usleep(10000);
+                //usleep(10000);
                 printf("   [C] Comando Refresh enviado.\n");
                 break;
 
