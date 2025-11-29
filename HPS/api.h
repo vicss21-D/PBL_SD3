@@ -36,11 +36,11 @@ extern "C" {
 #define INIT_ERR_OPEN -1
 #define INIT_ERR_MMAP -2
 
-/* Códigos de Erro da ASM_Store */
-#define STORE_SUCCESS       0
-#define STORE_ERR_ADDR      -1  // Endereço inválido
-#define STORE_ERR_TIMEOUT   -2  // Hardware não respondeu (timeout)
-#define STORE_ERR_HW        -3  // FPGA reportou um erro (FLAG_ERROR)
+/* Códigos de Retorno de Leitura e Escrita */
+#define ERR_SUCCESS    0  // Operação completada com sucesso
+#define ERR_ADDR      -1  // Endereço inválido
+#define ERR_TIMEOUT   -2  // Hardware não respondeu (timeout)
+#define ERR_HW        -3  // FPGA reportou um erro (FLAG_ERROR)
 
 /* ===================================================================
  * Protótipos das Funções Públicas (de api.s)
