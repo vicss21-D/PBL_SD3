@@ -583,11 +583,13 @@ int main() {
 
             case 11:
                 ASM_SetPrimaryMemory();
+                ASM_Refresh();
                 printf("   [C] Troca para memoria primaria realizada.\n");
             
                 
             case 12:
                 ASM_SetSecondaryMemory();
+                ASM_Refresh();
                 printf("   [C] Troca para memoria secundária realizada.\n");
             // --- OPÇÃO 0: Encerrar ---
             case 0:

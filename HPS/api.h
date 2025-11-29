@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 /* ===================================================================
- * Constantes (do seu api.s)
+ * Constantes (do seu lib.s)
  * =================================================================== */
 
 /* Parâmetros da Imagem */
@@ -43,7 +43,7 @@ extern "C" {
 #define ERR_HW        -3  // FPGA reportou um erro (FLAG_ERROR)
 
 /* ===================================================================
- * Protótipos das Funções Públicas (de api.s)
+ * Protótipos das Funções Públicas (de lib.s)
  * =================================================================== */
 
 /**
