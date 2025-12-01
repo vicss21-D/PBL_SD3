@@ -15,9 +15,7 @@
 // Tamanho máximo do buffer de caminho/nome
 #define MAX_PATH_LEN 256
 
-#define NBITS(x) ((((x)-1)/BITS_PER_LONG)+1)
-#define BITS_PER_LONG (sizeof(long) * 8)
-//#define test_bit(bit, array) ((array[bit/BITS_PER_LONG] >> (bit%BITS_PER_LONG)) & 1)
+// Macros de bits removidas daqui, pois já estão em mouse_utils.h
 
 /*
  * --- FUNÇÕES DE UTILITY DE DISPOSITIVO (is_mouse) ---
@@ -28,6 +26,8 @@ int is_mouse(int fd) {
     unsigned long relbit[NBITS(REL_MAX)];
     unsigned long keybit[NBITS(KEY_MAX)];
 
+    // is_keyboard removida, conforme refatoração anterior
+    // ioctl é a função que usa o fd (descritor de arquivo) para consultar o hardware
     if (ioctl(fd, EVIOCGBIT(EV_REL, sizeof(relbit)), relbit) < 0) return 0;
     if (ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keybit)), keybit) < 0) return 0;
 
@@ -47,7 +47,8 @@ int find_and_open_mouse(char *device_path_out, char *name_out) {
     
     printf("Varrendo dispositivos em /dev/input/...\n");
 
-    n = scandir("/dev/input", &namelist, NULL, NULL);
+    // O último NULL substitui o 'alphasort' conforme solicitado
+    n = scandir("/dev/input", &namelist, NULL, NULL); 
     if (n < 0) {
         perror("scandir");
         return -1;
