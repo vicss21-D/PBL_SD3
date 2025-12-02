@@ -1,15 +1,22 @@
 /*
+ * =========================================================================
+ * main_menu_test.c: COMPLETE FINAL VERSION - INTEGRATED WITH MOUSE
+ * =========================================================================
  * 
  * Image Processing System with FPGA Hardware Acceleration
- * Supports BMP loading, zoom in/out algorithms, and FPGA memory management
+ * Supports BMP loading, zoom algorithms, mouse input, and memory management
  * 
  */
 
 #include "api.h"
+#include "mouse_utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <string.h>
+#include <errno.h>
 
 /* ===================================================================
  * CONSTANTS AND CONFIGURATION
@@ -17,10 +24,18 @@
 #define TIMEOUT_LOOPS 50
 #define REFRESH_DELAY_US 100000
 #define PULSE_DELAY_US 10000
+#define MAX_PATH_LEN 256
 
 /* Zoom Level Constraints */
 #define MAX_ZOOM_IN_LEVEL 3
 #define MIN_ZOOM_OUT_LEVEL -3
+
+/* Mouse button codes */
+#define BTN_LEFT_CODE 272
+#define BTN_RIGHT_CODE 273
+
+/* Global mouse file descriptor */
+int mouse_fd_global = -1;
 
 /* ===================================================================
  * BMP FILE STRUCTURES
@@ -56,7 +71,6 @@ typedef struct {
 /**
  * @brief Converts RGB color to grayscale using standard luminosity formula
  */
-
 uint8_t rgb_to_gray(uint8_t r, uint8_t g, uint8_t b) {
     return (uint8_t)((299 * r + 587 * g + 114 * b) / 1000);
 }
@@ -64,7 +78,6 @@ uint8_t rgb_to_gray(uint8_t r, uint8_t g, uint8_t b) {
 /**
  * @brief Clears input buffer to prevent scanf issues
  */
-
 void clear_input_buffer(void) {
     int c;
     while ((c = getchar()) != '\n' && c != EOF);
@@ -73,7 +86,6 @@ void clear_input_buffer(void) {
 /**
  * @brief Waits for user to press Enter
  */
-
 void wait_for_enter(void) {
     printf("\nPressione Enter para continuar...");
     clear_input_buffer();
@@ -90,7 +102,6 @@ void wait_for_enter(void) {
  * @param image_data Output buffer for grayscale pixel data
  * @return 0 on success, -1 on failure
  */
-
 int load_bmp(const char *filename, uint8_t *image_data) {
     FILE *file;
     BMPHeader header;
@@ -185,7 +196,6 @@ int load_bmp(const char *filename, uint8_t *image_data) {
 /**
  * @brief Generates a horizontal gradient test pattern
  */
-
 void generate_test_pattern(uint8_t *image_data) {
     printf("   [C] Gerando padrao de teste (gradiente 320x240)...\n");
     for (int y = 0; y < IMG_HEIGHT; y++) {
@@ -201,11 +211,10 @@ void generate_test_pattern(uint8_t *image_data) {
  * =================================================================== */
 
 /**
- * @brief Sends entire image buffer to FPGA VRAM
+ * @brief Sends entire image buffer to FPGA VRAM (Primary Memory)
  * @param image_data Source pixel buffer
  * @return 0 on success, -1 on failure
  */
-
 int send_image_to_fpga(uint8_t *image_data) {
     int total_pixels = IMG_WIDTH * IMG_HEIGHT;
     int errors = 0;
@@ -213,7 +222,7 @@ int send_image_to_fpga(uint8_t *image_data) {
     printf("   [C] Enviando %d pixels para o FPGA (testando ASM_Store)...\n", total_pixels);
    
     for (int i = 0; i < total_pixels; i++) {
-        int status = ASM_Store(i, image_data[i], 0);
+        int status = ASM_Store(i, image_data[i], 0); // mem_sel = 0 (Primary Memory)
         if (status != 0) {
             printf("\n   [C] ERRO: ASM_Store falhou no pixel %d (codigo %d)\n", i, status);
             errors++;
@@ -284,9 +293,10 @@ int execute_algorithm(const char *algo_name, void (*algo_func)(void)) {
  * @param y Starting Y coordinate
  * @param width Window width
  * @param height Window height
+ * @param mem_sel Memory selector (0=Primary, 1=Secondary)
  * @return 0 on success, -1 on failure
  */
-int read_fpga_window(uint8_t *buffer, int x, int y, int width, int height) {
+int read_fpga_window(uint8_t *buffer, int x, int y, int width, int height, int mem_sel) {
     if (!buffer) {
         printf("ERRO: Buffer nulo em read_fpga_window\n");
         return -1;
@@ -305,13 +315,13 @@ int read_fpga_window(uint8_t *buffer, int x, int y, int width, int height) {
     int buffer_index = 0;
     int errors = 0;
    
-    printf("   [C] Lendo janela (%d,%d) com tamanho %dx%d da FPGA...\n",
-           x, y, width, height);
+    printf("   [C] Lendo janela (%d,%d) com tamanho %dx%d da FPGA (Memoria %d)...\n",
+           x, y, width, height, mem_sel);
    
     for (int row = 0; row < height; row++) {
         for (int col = 0; col < width; col++) {
             int addr = (y + row) * IMG_WIDTH + (x + col);
-            int pixel_value = ASM_Load(addr, 1);
+            int pixel_value = ASM_Load(addr, mem_sel);
            
             if (pixel_value < 0 || pixel_value > 255) {
                 printf("   [C] AVISO: Valor invalido no pixel [%d,%d]: %d\n",
@@ -388,30 +398,94 @@ void print_matrix(const uint8_t *data, int width, int height) {
 }
 
 /* ===================================================================
+ * MOUSE AREA SELECTION
+ * =================================================================== */
+
+/**
+ * @brief Captures two mouse clicks to define a rectangular area
+ * @param corner1_x Output: First corner X coordinate
+ * @param corner1_y Output: First corner Y coordinate
+ * @param corner2_x Output: Second corner X coordinate
+ * @param corner2_y Output: Second corner Y coordinate
+ * @return 0 on success, -1 on failure
+ */
+int capture_mouse_area(int *corner1_x, int *corner1_y, int *corner2_x, int *corner2_y) {
+    Cursor current_cursor = {0, 0};
+    MouseEvent event;
+    int read_status;
+    int corners_captured = 0;
+    
+    printf("\n=== CAPTURA DE AREA COM MOUSE ===\n");
+    printf("Instrucoes:\n");
+    printf("  - Botao ESQUERDO: Define o primeiro canto\n");
+    printf("  - Botao DIREITO: Define o segundo canto\n");
+    printf("  - Mova o mouse para posicionar o cursor\n\n");
+    
+    while (corners_captured < 2) {
+        read_status = read_and_process_mouse_event(mouse_fd_global, &current_cursor, &event);
+        
+        if (read_status < 0) {
+            printf("ERRO: Falha na leitura do mouse\n");
+            return -1;
+        } else if (read_status == 0) {
+            printf("ERRO: EOF ao ler mouse\n");
+            return -1;
+        } else if (read_status == 1) {
+            /* Display movement events */
+            if (event.event_type == EV_REL) {
+                printf("[MOVIMENTO] CursorXY: (%d, %d)\r", 
+                       event.cursor_pos.x, event.cursor_pos.y);
+                fflush(stdout);
+            }
+            /* Handle button press events */
+            else if (event.event_type == EV_KEY && event.event_value == 1) {
+                if (event.event_code == BTN_LEFT_CODE && corners_captured == 0) {
+                    *corner1_x = event.cursor_pos.x;
+                    *corner1_y = event.cursor_pos.y;
+                    printf("\n[CANTO 1] Capturado em (%d, %d)\n", *corner1_x, *corner1_y);
+                    printf("Agora clique com o botao DIREITO para o segundo canto...\n");
+                    corners_captured = 1;
+                }
+                else if (event.event_code == BTN_RIGHT_CODE && corners_captured == 1) {
+                    *corner2_x = event.cursor_pos.x;
+                    *corner2_y = event.cursor_pos.y;
+                    printf("[CANTO 2] Capturado em (%d, %d)\n", *corner2_x, *corner2_y);
+                    corners_captured = 2;
+                }
+            }
+        }
+    }
+    
+    printf("\n>>> Area capturada com sucesso!\n");
+    return 0;
+}
+
+/* ===================================================================
  * MENU SYSTEM
  * =================================================================== */
 
 /**
  * @brief Displays the interactive menu
  */
-void display_menu(int image_loaded, int image_sent_to_fpga) {
+void display_menu(int image_loaded, int image_sent_to_fpga, int zoom_level) {
     printf("\n\n=== MENU DE TESTE DA API ===\n");
-    printf("ESTADO: Buffer C [%s] | FPGA VRAM [%s]\n",
+    printf("ESTADO: Buffer C [%s] | FPGA VRAM [%s] | Zoom Level [%d]\n",
            image_loaded ? "CARREGADA" : "VAZIA",
-           image_sent_to_fpga ? "CARREGADA" : "VAZIA");
+           image_sent_to_fpga ? "CARREGADA" : "VAZIA",
+           zoom_level);
     printf("----------------------------------------------------------\n");
    
     printf("\n--- Carga de Imagem (Buffer C) ---\n");
     printf(" 1. Carregar Imagem BMP\n");
     printf(" 2. Gerar Gradiente\n");
-    printf(" 3. Ler janela da FPGA e exibir matriz\n");
+    printf(" 3. Ler janela da FPGA (com mouse) e exibir matriz\n");
    
     printf("\n--- Algoritmos de Processamento (FPGA) ---\n");
-    printf(" 4. Nearest Neighbor (Zoom IN)\n");
-    printf(" 5. Pixel Replication (Zoom IN)\n");
+    printf(" 4. NearestNeighbor (Zoom IN)\n");
+    printf(" 5. PixelReplication (Zoom IN)\n");
     printf(" 6. Decimation (Zoom OUT)\n");
-    printf(" 7. Block Averaging (Zoom OUT)\n");
-    printf(" 8. Reset\n");
+    printf(" 7. BlockAveraging (Zoom OUT)\n");
+    printf(" 8. RESET\n");
    
     printf("\n----------------------------------------------------------\n");
     printf(" 0. Encerrar API e Sair\n");
@@ -420,17 +494,40 @@ void display_menu(int image_loaded, int image_sent_to_fpga) {
 }
 
 /**
- * @brief Checks if window reading is allowed based on zoom state
+ * @brief Checks if window reading is allowed and determines memory to read
  * @param zoom_level Current zoom level
+ * @param mem_sel_out Output: Memory selector (0 or 1)
  * @return 1 if allowed, 0 if not allowed
  */
-int can_read_window(int zoom_level) {
-    /* Allow reading only if:
-     * 1. No zoom operations yet (zoom_level == 0)
-     * 2. Only zoom-out operations used (zoom_level < 0)
-     * 3. Returned to initial state after zoom operations (zoom_level == 0)
+int can_read_window(int zoom_level, int *mem_sel_out) {
+    /* Reading rules:
+     * 1. If zoom_level > 0: Zoom-in was applied, image is processed
+     *    -> Read from SECONDARY memory (mem_sel = 1)
+     * 2. If zoom_level <= 0: At initial state or zoom-out was applied
+     *    -> Read from PRIMARY memory (mem_sel = 0)
+     * 3. Reading is NOT allowed if zoom-out was applied without returning to initial state
      */
-    return (zoom_level <= 0);
+    
+    if (zoom_level < 0) {
+        /* Zoom-out was applied and not compensated */
+        printf("ERRO: Nao e possivel ler a janela no estado atual de zoom.\n");
+        printf("   A leitura so e permitida quando:\n");
+        printf("   - Nenhum algoritmo foi executado ainda (zoom_level = 0)\n");
+        printf("   - Algoritmos de zoom-in foram usados (zoom_level > 0)\n");
+        printf("   Nivel de zoom atual: %d\n", zoom_level);
+        return 0;
+    }
+    
+    /* Determine which memory to read */
+    if (zoom_level > 0) {
+        *mem_sel_out = 1; // Secondary memory (processed image)
+        printf("   [INFO] Imagem processada detectada. Lendo da memoria SECUNDARIA.\n");
+    } else {
+        *mem_sel_out = 0; // Primary memory (original image)
+        printf("   [INFO] Imagem original. Lendo da memoria PRIMARIA.\n");
+    }
+    
+    return 1;
 }
 
 /* ===================================================================
@@ -444,6 +541,10 @@ int main(void) {
    
     int option;
     char filename[256];
+    
+    /* Mouse variables */
+    char device_path[MAX_PATH_LEN] = {0};
+    char device_name[MAX_PATH_LEN] = {0};
 
     /* Allocate image buffer */
     uint8_t *image_data = malloc(IMG_WIDTH * IMG_HEIGHT);
@@ -474,13 +575,32 @@ int main(void) {
     usleep(PULSE_DELAY_US);
     
     printf(">>> Sistema inicializado e pronto para uso.\n");
+    
+    /* Initialize mouse device */
+    printf("\nInicializando dispositivo de mouse...\n");
+    mouse_fd_global = find_and_open_mouse(device_path, device_name);
+    
+    if (mouse_fd_global < 0) {
+        if (errno == EACCES) {
+            printf("!!! AVISO: Permissao negada para mouse. Execute como root (sudo).\n");
+            printf("    A funcionalidade de selecao com mouse estara desabilitada.\n");
+        } else {
+            printf("!!! AVISO: Nao foi possivel encontrar/abrir um mouse valido.\n");
+            printf("    A funcionalidade de selecao com mouse estara desabilitada.\n");
+        }
+    } else {
+        printf(">>> Mouse inicializado com sucesso:\n");
+        printf("    Caminho: %s\n", device_path);
+        printf("    Nome: %s\n", device_name);
+    }
+    
     wait_for_enter();
 
     /* ===================================================================
      * MAIN MENU LOOP
      * =================================================================== */
     while (1) {
-        display_menu(image_loaded_in_memory, image_sent_to_fpga);
+        display_menu(image_loaded_in_memory, image_sent_to_fpga, zoom_level);
        
         if (scanf("%d", &option) != 1) {
             clear_input_buffer();
@@ -550,48 +670,38 @@ int main(void) {
                 break;
             }
 
-            /* ==================== READ FPGA WINDOW ==================== */
+            /* ==================== READ FPGA WINDOW WITH MOUSE ==================== */
             case 3: {
                 if (!image_sent_to_fpga) {
                     printf("ERRO: Nenhuma imagem na VRAM do FPGA. Carregue uma imagem primeiro (Opcao 1 ou 2).\n");
                     break;
                 }
-
-                /* Check if reading is allowed based on zoom state */
-                if (!can_read_window(zoom_level)) {
-                    printf("ERRO: Nao e possivel ler a janela no estado atual de zoom.\n");
-                    printf("   A leitura so e permitida quando:\n");
-                    printf("   - Nenhum algoritmo foi executado ainda\n");
-                    printf("   - Apenas algoritmos de zoom-out foram usados\n");
-                    printf("   - A imagem retornou ao estado inicial apos zoom\n");
-                    printf("   Nivel de zoom atual: %d (deve ser <= 0)\n", zoom_level);
+                
+                if (mouse_fd_global < 0) {
+                    printf("ERRO: Mouse nao inicializado. Execute o programa com sudo.\n");
                     break;
                 }
 
-                printf("\n=== LER VRAM E PRINTAR MATRIZ ===\n");
-               
-                int x1, y1, x2, y2;
-                int rect_x, rect_y, rect_width, rect_height;
-               
-                printf("Digite a primeira coordenada (x1 y1): ");
-                if (scanf("%d %d", &x1, &y1) != 2) {
-                    clear_input_buffer();
-                    printf("Erro na entrada.\n");
-                    break;
-                }
-               
-                printf("Digite a segunda coordenada (x2 y2): ");
-                if (scanf("%d %d", &x2, &y2) != 2) {
-                    clear_input_buffer();
-                    printf("Erro na entrada.\n");
+                /* Check if reading is allowed and determine memory selector */
+                int mem_sel;
+                if (!can_read_window(zoom_level, &mem_sel)) {
                     break;
                 }
 
+                printf("\n=== LER VRAM E PRINTAR MATRIZ (COM MOUSE) ===\n");
+               
+                /* Capture area with mouse */
+                int corner1_x, corner1_y, corner2_x, corner2_y;
+                if (capture_mouse_area(&corner1_x, &corner1_y, &corner2_x, &corner2_y) != 0) {
+                    printf("ERRO: Falha na captura da area com o mouse.\n");
+                    break;
+                }
+                
                 /* Calculate rectangle boundaries */
-                rect_x = (x1 < x2) ? x1 : x2;
-                rect_y = (y1 < y2) ? y1 : y2;
-                rect_width = abs(x2 - x1);
-                rect_height = abs(y2 - y1);
+                int rect_x = (corner1_x < corner2_x) ? corner1_x : corner2_x;
+                int rect_y = (corner1_y < corner2_y) ? corner1_y : corner2_y;
+                int rect_width = abs(corner2_x - corner1_x);
+                int rect_height = abs(corner2_y - corner1_y);
 
                 /* Validate rectangle */
                 if (rect_width == 0 || rect_height == 0) {
@@ -616,7 +726,8 @@ int main(void) {
                     break;
                 }
 
-                if (read_fpga_window(window_buffer, rect_x, rect_y, rect_width, rect_height) == 0) {
+                if (read_fpga_window(window_buffer, rect_x, rect_y, 
+                                    rect_width, rect_height, mem_sel) == 0) {
                     printf(">>> SUCESSO: Dados lidos da area (%d,%d) a (%d,%d).\n",
                            rect_x, rect_y, rect_x + rect_width, rect_y + rect_height);
                     print_matrix(window_buffer, rect_width, rect_height);
@@ -729,6 +840,13 @@ int main(void) {
             /* ==================== EXIT ==================== */
             case 0: {
                 printf("=== ENCERRANDO SISTEMA ===\n");
+                
+                /* Close mouse device if open */
+                if (mouse_fd_global >= 0) {
+                    close(mouse_fd_global);
+                    printf("Mouse fechado.\n");
+                }
+                
                 printf("Encerrando API...\n");
                 API_close();
                 free(image_data);
@@ -746,6 +864,9 @@ int main(void) {
 
 cleanup_error:
     printf("\n!!! OCORREU UM ERRO FATAL. ENCERRANDO API. !!!\n");
+    if (mouse_fd_global >= 0) {
+        close(mouse_fd_global);
+    }
     API_close();
     free(image_data);
     return -1;
