@@ -77,12 +77,11 @@ module soc_system (
 	memory_mem_odt,
 	memory_mem_dm,
 	memory_oct_rzqin,
+	pio_data_out_export,
 	pio_enable_export,
 	pio_flags_export,
 	pio_instruct_export,
-	reset_reset_n,
-	pio_data_out_export,
-	pio_mem_sel_export);	
+	reset_reset_n);	
 
 	input		clk_clk;
 	input		hps_0_f2h_cold_reset_req_reset_n;
@@ -161,10 +160,9 @@ module soc_system (
 	output		memory_mem_odt;
 	output	[3:0]	memory_mem_dm;
 	input		memory_oct_rzqin;
+	input	[7:0]	pio_data_out_export;
 	output		pio_enable_export;
 	input	[3:0]	pio_flags_export;
 	output	[28:0]	pio_instruct_export;
 	input		reset_reset_n;
-	input	[7:0]	pio_data_out_export;
-	output		pio_mem_sel_export;
 endmodule

@@ -298,11 +298,7 @@
    internal="pio_instruct.external_connection"
    type="conduit"
    dir="end" />
- <interface
-   name="pio_mem_sel"
-   internal="pio_mem_sel.external_connection"
-   type="conduit"
-   dir="end" />
+ <interface name="pio_mem_sel" internal="pio_mem_sel.external_connection" />
  <interface name="reset" internal="clk_0.clk_in_reset" type="reset" dir="end" />
  <module name="clk_0" kind="clock_source" version="23.1" enabled="1">
   <parameter name="clockFrequency" value="50000000" />
@@ -995,7 +991,7 @@
    name="pio_mem_sel"
    kind="altera_avalon_pio"
    version="23.1"
-   enabled="1">
+   enabled="0">
   <parameter name="bitClearingEdgeCapReg" value="false" />
   <parameter name="bitModifyingOutReg" value="false" />
   <parameter name="captureEdge" value="false" />
