@@ -12,6 +12,7 @@
 #define MOUSE_UTILS_H
 
 #include <linux/input.h>
+#include <stdint.h>
 
 /* ===================================================================
  * BIT MANIPULATION MACROS
