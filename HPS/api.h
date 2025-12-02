@@ -62,17 +62,23 @@ extern void API_close(void);
 /**
  * @brief Envia um pixel para o FPGA (função SÍNCRONA/BLOQUEANTE).
  * Esta função usa o protocolo de "pacote" e espera pelo FLAG_DONE.
- * * @param address O endereço na VRAM do FPGA (0 a 76799).
+ * @param address O endereço na VRAM do FPGA (0 a 76799).
  * @param pixel_data O valor do pixel (8 bits).
+ * @param mem_sel 0 para Memória Principal, 1 para Memória Secundária (Bit 20).
  * @return 0 (Sucesso), -1 (Endereço Inválido), -2 (Timeout), -3 (Erro de Hardware).
  */
-extern int ASM_Store(unsigned int address, unsigned char pixel_data);
+extern int ASM_Store(unsigned int address, unsigned char pixel_data, int mem_sel);
 
-extern int ASM_Load(unsigned int address);
+/**
+ * @brief Lê um pixel do FPGA.
+ * @param address Endereço na VRAM.
+ * @param mem_sel 0 para Memória Principal, 1 para Memória Secundária (Bit 20).
+ */
+
+extern int ASM_Load(unsigned int address, int mem_sel);
 
 /**
  * @brief Envia um comando NOP (Refresh) para o FPGA (assíncrono).
- * (Baseado na sua função 'ASM_Refresh', mas usando o pulso seguro).
  */
 extern void ASM_Refresh(void);
 
@@ -129,25 +135,6 @@ extern int ASM_Get_Flag_Max_Zoom(void);
  * @return 1 se (FLAG_MIN_ZOOM == 1), 0 se (FLAG_MIN_ZOOM == 0).
  */
 extern int ASM_Get_Flag_Min_Zoom(void);
-
-/*
- * ===================================================================
- * Funções de Troca de Memória
- *
- * Retornam 1 (verdadeiro/ativo) ou 0 (falso/inativo).
- * ===================================================================
- */
-
-/**
- * @brief Define o sinal SEL_MEM para 0 (Seleciona memória primária/original).
- */
-extern void ASM_SetPrimaryMemory(void);
-
-/**
- * @brief Define o sinal SEL_MEM para 1 (Seleciona memória secundária/trabalho).
- */
-extern void ASM_SetSecondaryMemory(void);
-
 
 #ifdef __cplusplus
 }

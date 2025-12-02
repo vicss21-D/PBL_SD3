@@ -1,21 +1,30 @@
 /*
- * =========================================================================
- * main_menu_test.c: VERSÃO FINAL COMPLETA - TUDO EM UM ARQUIVO
- * =========================================================================
+ * 
+ * Image Processing System with FPGA Hardware Acceleration
+ * Supports BMP loading, zoom in/out algorithms, and FPGA memory management
+ * 
  */
 
 #include "api.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <unistd.h>  // Para usleep()
-
-#define C_TIMEOUT_LOOPS 50
+#include <unistd.h>
 
 /* ===================================================================
- * FUNÇÕES DE CARREGAMENTO DE BMP
+ * CONSTANTS AND CONFIGURATION
  * =================================================================== */
+#define TIMEOUT_LOOPS 50
+#define REFRESH_DELAY_US 100000
+#define PULSE_DELAY_US 10000
 
+/* Zoom Level Constraints */
+#define MAX_ZOOM_IN_LEVEL 3
+#define MIN_ZOOM_OUT_LEVEL -3
+
+/* ===================================================================
+ * BMP FILE STRUCTURES
+ * =================================================================== */
 #pragma pack(push, 1)
 typedef struct {
     uint16_t type;
@@ -40,14 +49,52 @@ typedef struct {
 } BMPInfoHeader;
 #pragma pack(pop)
 
+/* ===================================================================
+ * UTILITY FUNCTIONS
+ * =================================================================== */
+
+/**
+ * @brief Converts RGB color to grayscale using standard luminosity formula
+ */
+
 uint8_t rgb_to_gray(uint8_t r, uint8_t g, uint8_t b) {
     return (uint8_t)((299 * r + 587 * g + 114 * b) / 1000);
 }
 
+/**
+ * @brief Clears input buffer to prevent scanf issues
+ */
+
+void clear_input_buffer(void) {
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF);
+}
+
+/**
+ * @brief Waits for user to press Enter
+ */
+
+void wait_for_enter(void) {
+    printf("\nPressione Enter para continuar...");
+    clear_input_buffer();
+    getchar();
+}
+
+/* ===================================================================
+ * BMP IMAGE LOADING
+ * =================================================================== */
+
+/**
+ * @brief Loads a BMP image file into memory buffer
+ * @param filename Path to BMP file
+ * @param image_data Output buffer for grayscale pixel data
+ * @return 0 on success, -1 on failure
+ */
+
 int load_bmp(const char *filename, uint8_t *image_data) {
     FILE *file;
     BMPHeader header;
-    BMPInfoHeader infoHeader;
+    BMPInfoHeader info_header;
    
     file = fopen(filename, "rb");
     if (!file) {
@@ -55,6 +102,7 @@ int load_bmp(const char *filename, uint8_t *image_data) {
         return -1;
     }
    
+    /* Read and validate BMP header */
     fread(&header, sizeof(BMPHeader), 1, file);
     if (header.type != 0x4D42) {
         printf(" Arquivo nao e BMP valido (assinatura 0x%X)\n", header.type);
@@ -62,18 +110,20 @@ int load_bmp(const char *filename, uint8_t *image_data) {
         return -1;
     }
    
-    fread(&infoHeader, sizeof(BMPInfoHeader), 1, file);
-   
-    if (infoHeader.width != IMG_WIDTH || abs(infoHeader.height) != IMG_HEIGHT) {
+    /* Read and validate info header */
+    fread(&info_header, sizeof(BMPInfoHeader), 1, file);
+    if (info_header.width != IMG_WIDTH || abs(info_header.height) != IMG_HEIGHT) {
         printf(" Dimensao incorreta: %dx%d (esperado %dx%d)\n",
-               infoHeader.width, abs(infoHeader.height), IMG_WIDTH, IMG_HEIGHT);
+               info_header.width, abs(info_header.height), IMG_WIDTH, IMG_HEIGHT);
         fclose(file);
         return -1;
     }
    
+    /* Position file pointer at pixel data */
     fseek(file, header.offset, SEEK_SET);
    
-    int row_size = ((infoHeader.width * infoHeader.bits + 31) / 32) * 4;
+    /* Calculate row size with padding */
+    int row_size = ((info_header.width * info_header.bits + 31) / 32) * 4;
    
     uint8_t *row_data = (uint8_t*)malloc(row_size);
     if (!row_data) {
@@ -82,6 +132,7 @@ int load_bmp(const char *filename, uint8_t *image_data) {
         return -1;
     }
    
+    /* Read and convert pixel data */
     printf("Carregando");
     for (int y = 0; y < IMG_HEIGHT; y++) {
         fread(row_data, 1, row_size, file);
@@ -89,29 +140,32 @@ int load_bmp(const char *filename, uint8_t *image_data) {
         for (int x = 0; x < IMG_WIDTH; x++) {
             uint8_t gray;
            
-            if (infoHeader.bits == 32) {
+            /* Handle different bit depths */
+            if (info_header.bits == 32) {
                 uint8_t b = row_data[x * 4 + 0];
                 uint8_t g = row_data[x * 4 + 1];
                 uint8_t r = row_data[x * 4 + 2];
                 gray = rgb_to_gray(r, g, b);
-            } else if (infoHeader.bits == 24) {
+            } else if (info_header.bits == 24) {
                 uint8_t b = row_data[x * 3 + 0];
                 uint8_t g = row_data[x * 3 + 1];
                 uint8_t r = row_data[x * 3 + 2];
                 gray = rgb_to_gray(r, g, b);
-            } else if (infoHeader.bits == 8) {
+            } else if (info_header.bits == 8) {
                 gray = row_data[x];
             } else {
-                printf("\nFormato %d bits nao suportado\n", infoHeader.bits);
+                printf("\nFormato %d bits nao suportado\n", info_header.bits);
                 free(row_data);
                 fclose(file);
                 return -1;
             }
            
+            /* BMP rows are stored bottom-to-top */
             int addr = (IMG_HEIGHT - 1 - y) * IMG_WIDTH + x;
             image_data[addr] = gray;
         }
        
+        /* Progress indicator */
         if (y % 60 == 0) {
             printf(".");
             fflush(stdout);
@@ -125,10 +179,14 @@ int load_bmp(const char *filename, uint8_t *image_data) {
 }
 
 /* ===================================================================
- * FUNÇÕES AUXILIARES DE TESTE
+ * TEST PATTERN GENERATION
  * =================================================================== */
 
-void gerar_padrao_teste(uint8_t *image_data) {
+/**
+ * @brief Generates a horizontal gradient test pattern
+ */
+
+void generate_test_pattern(uint8_t *image_data) {
     printf("   [C] Gerando padrao de teste (gradiente 320x240)...\n");
     for (int y = 0; y < IMG_HEIGHT; y++) {
         for (int x = 0; x < IMG_WIDTH; x++) {
@@ -138,14 +196,24 @@ void gerar_padrao_teste(uint8_t *image_data) {
     }
 }
 
-int enviar_imagem_para_fpga(uint8_t *image_data) {
+/* ===================================================================
+ * FPGA COMMUNICATION
+ * =================================================================== */
+
+/**
+ * @brief Sends entire image buffer to FPGA VRAM
+ * @param image_data Source pixel buffer
+ * @return 0 on success, -1 on failure
+ */
+
+int send_image_to_fpga(uint8_t *image_data) {
     int total_pixels = IMG_WIDTH * IMG_HEIGHT;
     int errors = 0;
 
     printf("   [C] Enviando %d pixels para o FPGA (testando ASM_Store)...\n", total_pixels);
    
     for (int i = 0; i < total_pixels; i++) {
-        int status = ASM_Store(i, image_data[i]);
+        int status = ASM_Store(i, image_data[i], 0);
         if (status != 0) {
             printf("\n   [C] ERRO: ASM_Store falhou no pixel %d (codigo %d)\n", i, status);
             errors++;
@@ -159,7 +227,7 @@ int enviar_imagem_para_fpga(uint8_t *image_data) {
     printf("   [C] Envio de pixels OK.\n");
     printf("   [C] Testando ASM_Refresh()...\n");
     ASM_Refresh();
-    usleep(100000);
+    usleep(REFRESH_DELAY_US);
 
     if (errors > 0) {
         printf("   [C] ERRO: %d falhas de escrita de pixel.\n", errors);
@@ -168,41 +236,56 @@ int enviar_imagem_para_fpga(uint8_t *image_data) {
     return 0;
 }
 
-int executar_algoritmo(const char *nome_algoritmo, void (*funcao_algoritmo)(void)) {
-    printf("   [C] Executando '%s' (assincrono)...\n", nome_algoritmo);
+/**
+ * @brief Executes an algorithm on FPGA and waits for completion
+ * @param algo_name Algorithm name for logging
+ * @param algo_func Pointer to algorithm function
+ * @return 0 on success, -1 on failure
+ */
+int execute_algorithm(const char *algo_name, void (*algo_func)(void)) {
+    printf("   [C] Executando '%s' (assincrono)...\n", algo_name);
    
-    funcao_algoritmo();
+    /* Set algorithm opcode */
+    algo_func();
    
     printf("   [C] Hardware iniciado. Aguardando FLAG_DONE (polling)...\n");
 
-    int timeout_c = 0;
+    /* Poll for completion */
+    int timeout_counter = 0;
     while (ASM_Get_Flag_Done() == 0) {
-        usleep(100000);
-        timeout_c++;
+        usleep(REFRESH_DELAY_US);
+        timeout_counter++;
        
-        if (timeout_c > C_TIMEOUT_LOOPS) {
-            printf("\n   [C] ERRO FATAL: TIMEOUT DO ALGORITMO '%s'!\n", nome_algoritmo);
+        if (timeout_counter > TIMEOUT_LOOPS) {
+            printf("\n   [C] ERRO FATAL: TIMEOUT DO ALGORITMO '%s'!\n", algo_name);
             return -1;
         }
     }
    
-    printf("   [C] FLAG_DONE recebida para '%s'!\n", nome_algoritmo);
+    printf("   [C] FLAG_DONE recebida para '%s'!\n", algo_name);
 
+    /* Check for hardware errors */
     if (ASM_Get_Flag_Error() != 0) {
-        printf("   [C] ATENCAO: O FPGA reportou um ERRO (Flag_Error) durante '%s'!\n", nome_algoritmo);
+        printf("   [C] ATENCAO: O FPGA reportou um ERRO (Flag_Error) durante '%s'!\n", algo_name);
         return -1;
     }
 
+    /* Pulse enable to acknowledge completion */
     ASM_Pulse_Enable();
    
-    printf("   [C] '%s' executado com sucesso.\n", nome_algoritmo);
+    printf("   [C] '%s' executado com sucesso.\n", algo_name);
     return 0;
 }
 
-/* ===================================================================
- * FUNÇÕES DE LEITURA DA FPGA
- * =================================================================== */
-
+/**
+ * @brief Reads a rectangular window from FPGA memory
+ * @param buffer Output buffer for pixel data
+ * @param x Starting X coordinate
+ * @param y Starting Y coordinate
+ * @param width Window width
+ * @param height Window height
+ * @return 0 on success, -1 on failure
+ */
 int read_fpga_window(uint8_t *buffer, int x, int y, int width, int height) {
     if (!buffer) {
         printf("ERRO: Buffer nulo em read_fpga_window\n");
@@ -228,7 +311,7 @@ int read_fpga_window(uint8_t *buffer, int x, int y, int width, int height) {
     for (int row = 0; row < height; row++) {
         for (int col = 0; col < width; col++) {
             int addr = (y + row) * IMG_WIDTH + (x + col);
-            int pixel_value = ASM_Load(addr);
+            int pixel_value = ASM_Load(addr, 1);
            
             if (pixel_value < 0 || pixel_value > 255) {
                 printf("   [C] AVISO: Valor invalido no pixel [%d,%d]: %d\n",
@@ -250,6 +333,9 @@ int read_fpga_window(uint8_t *buffer, int x, int y, int width, int height) {
     return (errors > 0) ? -1 : 0;
 }
 
+/**
+ * @brief Prints a matrix of pixel values to console
+ */
 void print_matrix(const uint8_t *data, int width, int height) {
     if (!data) {
         printf("ERRO: Dados nulos em print_matrix\n");
@@ -258,6 +344,7 @@ void print_matrix(const uint8_t *data, int width, int height) {
    
     printf("\n=== MATRIZ %dx%d ===\n", width, height);
    
+    /* Limit display size for readability */
     int max_rows = (height > 20) ? 20 : height;
     int max_cols = (width > 40) ? 40 : width;
    
@@ -265,6 +352,7 @@ void print_matrix(const uint8_t *data, int width, int height) {
         printf("(Mostrando apenas %dx%d da matriz completa)\n\n", max_cols, max_rows);
     }
    
+    /* Print column headers */
     printf("     ");
     for (int col = 0; col < max_cols; col++) {
         printf("%3d ", col);
@@ -279,6 +367,7 @@ void print_matrix(const uint8_t *data, int width, int height) {
     if (width > max_cols) printf("---");
     printf("\n");
    
+    /* Print matrix data */
     for (int row = 0; row < max_rows; row++) {
         printf("%3d |", row);
        
@@ -299,33 +388,30 @@ void print_matrix(const uint8_t *data, int width, int height) {
 }
 
 /* ===================================================================
- * LÓGICA DO MENU
+ * MENU SYSTEM
  * =================================================================== */
 
-void exibir_menu(int inicializada, int img_carregada_c, int img_enviada_fpga) {
+/**
+ * @brief Displays the interactive menu
+ */
+void display_menu(int image_loaded, int image_sent_to_fpga) {
     printf("\n\n=== MENU DE TESTE DA API ===\n");
-    printf("ESTADO: API [%s] | Buffer C [%s] | FPGA VRAM [%s]\n",
-           inicializada ? "ON" : "OFF",
-           img_carregada_c ? "CARREGADA" : "VAZIA",
-           img_enviada_fpga ? "CARREGADA" : "VAZIA");
+    printf("ESTADO: Buffer C [%s] | FPGA VRAM [%s]\n",
+           image_loaded ? "CARREGADA" : "VAZIA",
+           image_sent_to_fpga ? "CARREGADA" : "VAZIA");
     printf("----------------------------------------------------------\n");
    
-    printf(" 1. Inicializar API\n");
-
     printf("\n--- Carga de Imagem (Buffer C) ---\n");
-    printf(" 2. Carregar Imagem BMP\n");
-    printf(" 3. Gerar Gradiente\n");
-    printf(" 4. Ler janela da FPGA e exibir matriz\n");
+    printf(" 1. Carregar Imagem BMP\n");
+    printf(" 2. Gerar Gradiente\n");
+    printf(" 3. Ler janela da FPGA e exibir matriz\n");
    
-    printf("\n--- Comandos/Algoritmos (FPGA) ---\n");
-    printf(" 5. NearestNeighbor\n");
-    printf(" 6. PixelReplication\n");
-    printf(" 7. Decimation\n");
-    printf(" 8. BlockAveraging\n");
-    printf(" 9. Atualizar (ASM_Refresh)\n");
-    printf(" 10. RESET\n");
-    printf(" 11. Trocar para a memoria primaria\n");
-    printf(" 12. Trocar para a memoria secundaria\n");
+    printf("\n--- Algoritmos de Processamento (FPGA) ---\n");
+    printf(" 4. Nearest Neighbor (Zoom IN)\n");
+    printf(" 5. Pixel Replication (Zoom IN)\n");
+    printf(" 6. Decimation (Zoom OUT)\n");
+    printf(" 7. Block Averaging (Zoom OUT)\n");
+    printf(" 8. Reset\n");
    
     printf("\n----------------------------------------------------------\n");
     printf(" 0. Encerrar API e Sair\n");
@@ -333,93 +419,101 @@ void exibir_menu(int inicializada, int img_carregada_c, int img_enviada_fpga) {
     printf("\nEscolha uma opcao: ");
 }
 
-void limpar_buffer_entrada(void) {
-    int c;
-    while ((c = getchar()) != '\n' && c != EOF);
-}
-
-void esperar_enter(void) {
-    printf("\nPressione Enter para continuar...");
-    limpar_buffer_entrada();
-    getchar();
-}
-
-void reset_temporario(void) {
-    ASM_Reset();
-    ASM_Pulse_Enable();
+/**
+ * @brief Checks if window reading is allowed based on zoom state
+ * @param zoom_level Current zoom level
+ * @return 1 if allowed, 0 if not allowed
+ */
+int can_read_window(int zoom_level) {
+    /* Allow reading only if:
+     * 1. No zoom operations yet (zoom_level == 0)
+     * 2. Only zoom-out operations used (zoom_level < 0)
+     * 3. Returned to initial state after zoom operations (zoom_level == 0)
+     */
+    return (zoom_level <= 0);
 }
 
 /* ===================================================================
- * MAIN INTERATIVO
+ * MAIN PROGRAM
  * =================================================================== */
 int main(void) {
-    int api_inicializada = 0;
-    int img_carregada_c = 0;
-    int img_enviada_fpga = 0;
-    int flag_nivel_zoom = 0;
+    /* System state variables */
+    int image_loaded_in_memory = 0;
+    int image_sent_to_fpga = 0;
+    int zoom_level = 0;
    
-    int opcao;
-    char nome_arquivo[256];
+    int option;
+    char filename[256];
 
+    /* Allocate image buffer */
     uint8_t *image_data = malloc(IMG_WIDTH * IMG_HEIGHT);
     if (!image_data) {
         printf("ERRO FATAL: Nao foi possivel alocar memoria para a imagem!\n");
         return 1;
     }
 
+    /* ===================================================================
+     * AUTOMATIC INITIALIZATION
+     * =================================================================== */
+    printf("=== INICIALIZANDO SISTEMA ===\n");
+    printf("Inicializando API (API_initialize)...\n");
+    
+    void *init_result = API_initialize();
+    if (init_result == (void*)-1 || init_result == (void*)-2) {
+        printf("ERRO FATAL: API_initialize falhou. Verifique o sudo e o mmap.\n");
+        free(image_data);
+        return -1;
+    }
+    
+    printf(">>> API inicializada com sucesso.\n");
+    
+    /* Reset FPGA to ensure clean state */
+    printf("Executando reset inicial do FPGA...\n");
+    ASM_Reset();
+    ASM_Pulse_Enable();
+    usleep(PULSE_DELAY_US);
+    
+    printf(">>> Sistema inicializado e pronto para uso.\n");
+    wait_for_enter();
+
+    /* ===================================================================
+     * MAIN MENU LOOP
+     * =================================================================== */
     while (1) {
-        exibir_menu(api_inicializada, img_carregada_c, img_enviada_fpga);
+        display_menu(image_loaded_in_memory, image_sent_to_fpga);
        
-        if (scanf("%d", &opcao) != 1) {
-            limpar_buffer_entrada();
+        if (scanf("%d", &option) != 1) {
+            clear_input_buffer();
             printf("Erro: Entrada invalida. Por favor, digite um numero.\n");
-            esperar_enter();
+            wait_for_enter();
             continue;
         }
 
         printf("\n");
 
-        switch (opcao) {
-            case 1: // Inicializar
-                if (api_inicializada) {
-                    printf("AVISO: A API ja esta inicializada.\n");
-                } else {
-                    printf("=== PASSO 1: Inicializando API (API_initialize) ===\n");
-                    void *result = API_initialize();
-                    if (result == (void*)-1 || result == (void*)-2) {
-                        printf("ERRO FATAL: API_initialize falhou. Verifique o sudo e o mmap.\n");
-                        free(image_data);
-                        return -1;
-                    }
-                    printf(">>> SUCESSO: API inicializada.\n");
-                    api_inicializada = 1;
-                }
-                break;
-
-            case 2: // Carregar BMP
-                if (!api_inicializada) {
-                    printf("ERRO: Inicialize a API primeiro (Opcao 1).\n");
-                    break;
-                }
-               
-                printf("=== PASSO 2: Carregando Imagem BMP ===\n");
+        switch (option) {
+            /* ==================== LOAD BMP IMAGE ==================== */
+            case 1: {
+                printf("=== CARREGANDO IMAGEM BMP ===\n");
                 printf("Digite o nome do arquivo BMP: ");
-                scanf("%255s", nome_arquivo);
+                scanf("%255s", filename);
                
-                if (load_bmp(nome_arquivo, image_data) == 0) {
+                if (load_bmp(filename, image_data) == 0) {
                     printf(">>> SUCESSO: Imagem BMP carregada no buffer C.\n");
-                    img_carregada_c = 1;
-                    img_enviada_fpga = 0;
+                    image_loaded_in_memory = 1;
+                    image_sent_to_fpga = 0;
                    
+                    /* Check if reset is needed */
                     if (ASM_Get_Flag_Min_Zoom() == 1) {
                         printf("AVISO: Flag Min_Zoom ativa. Considere fazer Reset.\n");
                     }
                    
-                    printf("=== PASSO 3: Enviando Imagem para FPGA ===\n");
-                    if (enviar_imagem_para_fpga(image_data) == 0) {
+                    /* Send image to FPGA */
+                    printf("=== ENVIANDO IMAGEM PARA FPGA ===\n");
+                    if (send_image_to_fpga(image_data) == 0) {
                         printf(">>> SUCESSO: Imagem enviada para a VRAM do FPGA.\n");
-                        img_enviada_fpga = 1;
-                        flag_nivel_zoom = 0;
+                        image_sent_to_fpga = 1;
+                        zoom_level = 0;
                     } else {
                         printf("ERRO FATAL: Falha ao enviar imagem para o FPGA.\n");
                         goto cleanup_error;
@@ -428,125 +522,148 @@ int main(void) {
                     printf("ERRO: Nao foi possivel carregar o BMP.\n");
                 }
                 break;
+            }
 
-            case 3: // Gerar Gradiente
-                if (!api_inicializada) {
-                    printf("ERRO: Inicialize a API primeiro (Opcao 1).\n");
-                    break;
-                }
-               
-                printf("=== PASSO 2: Gerando Gradiente ===\n");
-                gerar_padrao_teste(image_data);
+            /* ==================== GENERATE TEST PATTERN ==================== */
+            case 2: {
+                printf("=== GERANDO GRADIENTE ===\n");
+                generate_test_pattern(image_data);
                 printf(">>> SUCESSO: Gradiente gerado no buffer C.\n");
-                img_carregada_c = 1;
-                img_enviada_fpga = 0;
+                image_loaded_in_memory = 1;
+                image_sent_to_fpga = 0;
                
+                /* Check if reset is needed */
                 if (ASM_Get_Flag_Min_Zoom() == 1) {
                     printf("AVISO: Flag Min_Zoom ativa. Considere fazer Reset.\n");
                 }
                
-                printf("=== PASSO 3: Enviando Imagem para FPGA ===\n");
-                if (enviar_imagem_para_fpga(image_data) == 0) {
+                /* Send pattern to FPGA */
+                printf("=== ENVIANDO IMAGEM PARA FPGA ===\n");
+                if (send_image_to_fpga(image_data) == 0) {
                     printf(">>> SUCESSO: Imagem enviada para a VRAM do FPGA.\n");
-                    img_enviada_fpga = 1;
-                    flag_nivel_zoom = 0;
+                    image_sent_to_fpga = 1;
+                    zoom_level = 0;
                 } else {
                     printf("ERRO FATAL: Falha ao enviar imagem para o FPGA.\n");
                     goto cleanup_error;
                 }
                 break;
+            }
 
-            case 4: { // Ler janela da FPGA
-                if (!api_inicializada) {
-                    printf("ERRO: Inicialize a API primeiro (Opcao 1).\n");
+            /* ==================== READ FPGA WINDOW ==================== */
+            case 3: {
+                if (!image_sent_to_fpga) {
+                    printf("ERRO: Nenhuma imagem na VRAM do FPGA. Carregue uma imagem primeiro (Opcao 1 ou 2).\n");
                     break;
                 }
 
-                printf("\n=== PASSO 4: Ler VRAM e Printar Matriz ===\n");
+                /* Check if reading is allowed based on zoom state */
+                if (!can_read_window(zoom_level)) {
+                    printf("ERRO: Nao e possivel ler a janela no estado atual de zoom.\n");
+                    printf("   A leitura so e permitida quando:\n");
+                    printf("   - Nenhum algoritmo foi executado ainda\n");
+                    printf("   - Apenas algoritmos de zoom-out foram usados\n");
+                    printf("   - A imagem retornou ao estado inicial apos zoom\n");
+                    printf("   Nivel de zoom atual: %d (deve ser <= 0)\n", zoom_level);
+                    break;
+                }
+
+                printf("\n=== LER VRAM E PRINTAR MATRIZ ===\n");
                
                 int x1, y1, x2, y2;
-                int rx, ry, rw, rh;
+                int rect_x, rect_y, rect_width, rect_height;
                
                 printf("Digite a primeira coordenada (x1 y1): ");
                 if (scanf("%d %d", &x1, &y1) != 2) {
-                    limpar_buffer_entrada();
+                    clear_input_buffer();
                     printf("Erro na entrada.\n");
                     break;
                 }
                
                 printf("Digite a segunda coordenada (x2 y2): ");
                 if (scanf("%d %d", &x2, &y2) != 2) {
-                    limpar_buffer_entrada();
+                    clear_input_buffer();
                     printf("Erro na entrada.\n");
                     break;
                 }
 
-                rx = (x1 < x2) ? x1 : x2;
-                ry = (y1 < y2) ? y1 : y2;
-                rw = abs(x2 - x1);
-                rh = abs(y2 - y1);
+                /* Calculate rectangle boundaries */
+                rect_x = (x1 < x2) ? x1 : x2;
+                rect_y = (y1 < y2) ? y1 : y2;
+                rect_width = abs(x2 - x1);
+                rect_height = abs(y2 - y1);
 
-                if (rw == 0 || rh == 0) {
+                /* Validate rectangle */
+                if (rect_width == 0 || rect_height == 0) {
                     printf("ERRO: Area selecionada e vazia.\n");
                     break;
                 }
 
-                if (rx < 0 || ry < 0 || (rx + rw > IMG_WIDTH) || (ry + rh > IMG_HEIGHT)) {
+                if (rect_x < 0 || rect_y < 0 || 
+                    (rect_x + rect_width > IMG_WIDTH) || 
+                    (rect_y + rect_height > IMG_HEIGHT)) {
                     printf("ERRO: Coordenadas fora dos limites da imagem (%dx%d).\n",
                            IMG_WIDTH, IMG_HEIGHT);
-                    printf("      Area calculada: Inicio(%d,%d) Tamanho[%dx%d]\n", rx, ry, rw, rh);
+                    printf("      Area calculada: Inicio(%d,%d) Tamanho[%dx%d]\n", 
+                           rect_x, rect_y, rect_width, rect_height);
                     break;
                 }
 
-                uint8_t *buffer_recorte = (uint8_t*)malloc(rw * rh);
-                if (!buffer_recorte) {
+                /* Allocate and read window */
+                uint8_t *window_buffer = (uint8_t*)malloc(rect_width * rect_height);
+                if (!window_buffer) {
                     printf("ERRO: Memoria insuficiente.\n");
                     break;
                 }
 
-                if (read_fpga_window(buffer_recorte, rx, ry, rw, rh) == 0) {
+                if (read_fpga_window(window_buffer, rect_x, rect_y, rect_width, rect_height) == 0) {
                     printf(">>> SUCESSO: Dados lidos da area (%d,%d) a (%d,%d).\n",
-                           rx, ry, rx+rw, ry+rh);
-                    print_matrix(buffer_recorte, rw, rh);
+                           rect_x, rect_y, rect_x + rect_width, rect_y + rect_height);
+                    print_matrix(window_buffer, rect_width, rect_height);
                 } else {
                     printf("ERRO: Falha na leitura da FPGA.\n");
                 }
 
-                free(buffer_recorte);
+                free(window_buffer);
                 break;
             }
 
-            case 5: // NearestNeighbor
-            case 6: { // PixelReplication
-                if (!api_inicializada) {
-                    printf("ERRO: Inicialize a API primeiro (Opcao 1).\n");
-                    break;
-                }
-                if (!img_enviada_fpga) {
-                    printf("ERRO: Nenhuma imagem na VRAM do FPGA. Carregue uma imagem primeiro (Opcao 2 ou 3).\n");
+            /* ==================== ZOOM IN: NEAREST NEIGHBOR ==================== */
+            case 4:
+            /* ==================== ZOOM IN: PIXEL REPLICATION ==================== */
+            case 5: {
+                if (!image_sent_to_fpga) {
+                    printf("ERRO: Nenhuma imagem na VRAM do FPGA. Carregue uma imagem primeiro (Opcao 1 ou 2).\n");
                     break;
                 }
 
-                if (flag_nivel_zoom >= 3) {
-                    printf("ERRO: Nivel maximo de Zoom IN atingido.\n");
+                /* Check zoom level constraints */
+                if (zoom_level >= MAX_ZOOM_IN_LEVEL) {
+                    printf("ERRO: Nivel maximo de Zoom IN atingido (nivel %d).\n", zoom_level);
                     printf("   Nao e possivel executar mais algoritmos de Zoom IN.\n");
-                    printf("   Tente um 'Zoom OUT' (7, 8) ou 'Reset' (10).\n");
+                    printf("   Tente um 'Zoom OUT' (6, 7) ou 'Reset' (8).\n");
                     break;
                 }
+                
+                /* Check hardware flag */
                 if (ASM_Get_Flag_Max_Zoom() == 1) {
                     printf("ERRO: A 'Flag de Uso Maximo' (Max_Zoom) esta ATIVA.\n");
                     printf("   Nao e possivel executar mais algoritmos de Zoom IN.\n");
-                    printf("   Tente um 'Zoom OUT' (7, 8) ou 'Reset' (10).\n");
+                    printf("   Tente um 'Zoom OUT' (6, 7) ou 'Reset' (8).\n");
                     break;
                 }
                
-                printf("=== PASSO 4: Executando Algoritmo (Zoom IN) ===\n");
-                int resultado;
-                if (opcao == 5) resultado = executar_algoritmo("NearestNeighbor", &NearestNeighbor);
-                else resultado = executar_algoritmo("PixelReplication", &PixelReplication);
+                printf("=== EXECUTANDO ALGORITMO (Zoom IN) ===\n");
+                int result;
+                if (option == 4) {
+                    result = execute_algorithm("NearestNeighbor", &NearestNeighbor);
+                } else {
+                    result = execute_algorithm("PixelReplication", &PixelReplication);
+                }
                
-                if (resultado == 0) {
-                    flag_nivel_zoom++;
+                if (result == 0) {
+                    zoom_level++;
+                    printf("   Nivel de zoom atual: %d\n", zoom_level);
                 } else {
                     printf("ERRO FATAL: Falha na execucao do algoritmo.\n");
                     goto cleanup_error;
@@ -554,37 +671,42 @@ int main(void) {
                 break;
             }
 
-            case 7: // Decimation
-            case 8: { // BlockAveraging
-                if (!api_inicializada) {
-                    printf("ERRO: Inicialize a API primeiro (Opcao 1).\n");
-                    break;
-                }
-                if (!img_enviada_fpga) {
-                    printf("ERRO: Nenhuma imagem na VRAM do FPGA. Carregue uma imagem primeiro (Opcao 2 ou 3).\n");
+            /* ==================== ZOOM OUT: DECIMATION ==================== */
+            case 6:
+            /* ==================== ZOOM OUT: BLOCK AVERAGING ==================== */
+            case 7: {
+                if (!image_sent_to_fpga) {
+                    printf("ERRO: Nenhuma imagem na VRAM do FPGA. Carregue uma imagem primeiro (Opcao 1 ou 2).\n");
                     break;
                 }
 
-                if (flag_nivel_zoom <= -3) {
-                    printf("ERRO: Nivel minimo de Zoom OUT atingido.\n");
+                /* Check zoom level constraints */
+                if (zoom_level <= MIN_ZOOM_OUT_LEVEL) {
+                    printf("ERRO: Nivel minimo de Zoom OUT atingido (nivel %d).\n", zoom_level);
                     printf("   Nao e possivel executar mais algoritmos de Zoom OUT.\n");
-                    printf("   Tente um 'Zoom IN' (5, 6) ou 'Reset' (10).\n");
+                    printf("   Tente um 'Zoom IN' (4, 5) ou 'Reset' (8).\n");
                     break;
                 }
+                
+                /* Check hardware flag */
                 if (ASM_Get_Flag_Min_Zoom() == 1) {
                     printf("ERRO: A 'Flag de Zoom Minimo' (Min_Zoom) esta ATIVA.\n");
                     printf("   Nao e possivel executar mais algoritmos de Zoom OUT.\n");
-                    printf("   Tente um 'Zoom IN' (5, 6) ou 'Reset' (10).\n");
+                    printf("   Tente um 'Zoom IN' (4, 5) ou 'Reset' (8).\n");
                     break;
                 }
 
-                printf("=== PASSO 4: Executando Algoritmo (Zoom OUT) ===\n");
-                int resultado_out;
-                if (opcao == 7) resultado_out = executar_algoritmo("Decimation", &Decimation);
-                else resultado_out = executar_algoritmo("BlockAveraging", &BlockAveraging);
+                printf("=== EXECUTANDO ALGORITMO (Zoom OUT) ===\n");
+                int result;
+                if (option == 6) {
+                    result = execute_algorithm("Decimation", &Decimation);
+                } else {
+                    result = execute_algorithm("BlockAveraging", &BlockAveraging);
+                }
                
-                if (resultado_out == 0) {
-                    flag_nivel_zoom--;
+                if (result == 0) {
+                    zoom_level--;
+                    printf("   Nivel de zoom atual: %d\n", zoom_level);
                 } else {
                     printf("ERRO FATAL: Falha na execucao do algoritmo.\n");
                     goto cleanup_error;
@@ -592,75 +714,39 @@ int main(void) {
                 break;
             }
 
-            case 9: // Refresh
-                if (!api_inicializada) {
-                    printf("ERRO: Inicialize a API primeiro (Opcao 1).\n");
-                    break;
-                }
-                printf("=== EXECUTANDO: ASM_Refresh ===\n");
-                printf("   [C] Enviando comando ASM_Refresh() (NOP)...\n");
-                ASM_Refresh();
-                usleep(10000);
-                printf("   [C] Comando Refresh enviado.\n");
-                break;
-
-            case 10: // Reset
-                if (!api_inicializada) {
-                    printf("ERRO: Inicialize a API primeiro (Opcao 1).\n");
-                    break;
-                }
+            /* ==================== RESET ==================== */
+            case 8: {
                 printf("=== EXECUTANDO: RESET ===\n");
                 ASM_Reset();
-                flag_nivel_zoom = 0;
-                reset_temporario();
+                zoom_level = 0;
+                ASM_Pulse_Enable();
+                usleep(PULSE_DELAY_US);
                 printf("   [C] Reset concluido. Flags zeradas.\n");
+                printf("   Nivel de zoom resetado para: %d\n", zoom_level);
                 break;
+            }
 
-            case 11: // Memoria Primaria
-                if (!api_inicializada) {
-                    printf("ERRO: Inicialize a API primeiro (Opcao 1).\n");
-                    break;
-                }
-                printf("=== EXECUTANDO: Troca para Memoria Primaria ===\n");
-                ASM_SetPrimaryMemory();
-                ASM_Refresh();
-                printf("   [C] Troca para memoria primaria realizada.\n");
-                break;
-
-            case 12: // Memoria Secundaria
-                if (!api_inicializada) {
-                    printf("ERRO: Inicialize a API primeiro (Opcao 1).\n");
-                    break;
-                }
-                printf("=== EXECUTANDO: Troca para Memoria Secundaria ===\n");
-                ASM_SetSecondaryMemory();
-                ASM_Refresh();
-                printf("   [C] Troca para memoria secundaria realizada.\n");
-                break;
-
-            case 0: // Sair
-                printf("=== PASSO FINAL: Encerrando ===\n");
-                if (api_inicializada) {
-                    printf("Encerrando API...\n");
-                    API_close();
-                }
+            /* ==================== EXIT ==================== */
+            case 0: {
+                printf("=== ENCERRANDO SISTEMA ===\n");
+                printf("Encerrando API...\n");
+                API_close();
                 free(image_data);
-                printf("Saindo.\n");
+                printf("Sistema encerrado com sucesso.\n");
                 return 0;
+            }
 
             default:
                 printf("ERRO: Opcao invalida. Tente novamente.\n");
                 break;
         }
 
-        esperar_enter();
+        wait_for_enter();
     }
 
 cleanup_error:
     printf("\n!!! OCORREU UM ERRO FATAL. ENCERRANDO API. !!!\n");
-    if (api_inicializada) {
-        API_close();
-    }
+    API_close();
     free(image_data);
     return -1;
 }

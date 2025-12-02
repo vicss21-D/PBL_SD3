@@ -327,7 +327,7 @@ soc_system u0 (
     .pio_enable_export              (enable),   
     .pio_flags_export               (flags),    
     .pio_data_out_export            (data_out),
-	 .pio_mem_sel_export             (sel_mem)
+	 //.pio_mem_sel_export             (sel_mem) - inactivate on qsys
 );
 
 // WIRES 
@@ -336,16 +336,16 @@ wire [28:0] instruction;
 wire        enable;   
 wire [3:0]  flags;  
 wire [7:0]  data_out;
-wire        sel_mem;  
 
 // 3. DECODIFICAÇÃO E CODIFICAÇÃO DOS SINAIS 
 
 // --- DECODE
 
-wire [2:0]  opcode = instruction[2:0];
-wire [7:0]  data_in     = (opcode == 3'b010) ? instruction[28:21] : 8'h00; // 'b010 = STORE - GARANTE QUE SEJA 0 EM INSTRUÇOES DIFERENTES DE STORE
-wire [16:0] mem_addr    = (opcode == 3'b010 || opcode == 3'b001) ? instruction[19:3] : 17'h00; // GARANTE QUE SEJA 0 EM INSTRUÇOES DIFERENTES DE LOAD E STORE
-
+wire [2:0]  opcode   = instruction[2:0];
+wire [7:0]  data_in  = (opcode == 3'b010) ? instruction[28:21] : 8'h00; // 'b010 = STORE - GARANTE QUE SEJA 0 EM INSTRUÇOES DIFERENTES DE STORE
+wire [16:0] mem_addr = (opcode == 3'b010 || opcode == 3'b001) ? instruction[19:3] : 17'h00; // GARANTE QUE SEJA 0 EM INSTRUÇOES DIFERENTES DE LOAD E STORE
+wire        sel_mem  = (opcode == 3'b010 || opcode == 3'b001) ? instruction[20] : 1'h0;
+ 
 wire main_flag_done;
 wire main_flag_error;
 wire main_flag_zoom_max;

@@ -108,15 +108,15 @@ module main(
     );
     //memoria de trabalho
     mem1 memory3(
-        .rdaddress(addr_mem3),
+        .rdaddress(addr_mem3), // <-- Mudança aqui para permitir controle
         .wraddress(addr_for_write), 
         .clock(clk_100), 
-        .data(data_to_write),
+        .data(data_to_write), // <-- MUDANÇA PRINCIPAL: Usar o dado do algoritmo
         .wren(wren_mem3), 
         .q(data_out_mem3)
     );
 
-    assign addr_mem1 = (uc_state != ALGORITHM && uc_state != WAIT_WR_OR_RD && uc_state != READ_AND_WRITE) ? addr_for_copy: addr_for_read;
+    assign addr_mem1 = (uc_state != ALGORITHM && uc_state != WAIT_WR_OR_RD && uc_state != READ_AND_WRITE) ? addr_for_copy: addr_for_read; //teve mudança aqui
 
     //================================================================
     // 3. Lógica do VGA
