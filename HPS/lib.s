@@ -215,7 +215,7 @@ API_close:
     POP {R0-R7, PC}
 .size API_close, .-API_close
 
-@ --- ASM_Store (R0=address, R1=pixel_data) ---
+@ --- ASM_Store (R0=address, R1=pixel_data, R2=memory selection) ---
 @ BLOCKING FUNCTION - !
 @ Uses _pulse_enable_internal and _wait_for_done_internal
 
@@ -234,21 +234,21 @@ ASM_Store:
     @ Assembles the instruction packet
 
     @ OPCODE
-    MOV     R2, #INSTR_STORE
+    MOV     R5, #INSTR_STORE
 
     @ ADDRESS
     LSL     R3, R0, #3          
-    ORR     R2, R2, R3
+    ORR     R5, R5, R3
 
-    MOV     R3, #0
+    @MOV     R3, #0
     @ SELECTION MEMORY BIT
-    LSL     R3, R3, #20
-    ORR     R2, R2, R3
+    LSL     R3, R2, #20
+    ORR     R5, R5, R3
     @ PIXEL DATA
     LSL     R3, R1, #21
-    ORR     R2, R2, R3
+    ORR     R5, R5, R3
     
-    STR     R2, [R4, #PIO_INSTR_OFS]
+    STR     R5, [R4, #PIO_INSTR_OFS]
     DMB     sy
 
     BL      _pulse_enable_safe
@@ -293,10 +293,7 @@ ASM_Store:
 .global ASM_Load
 .type ASM_Load, %function
 
-@FIX LOAD INSTRUCTION
-@@FUNCTION FIXED, REMAINING TESTS PENDING
-
-@ --- ASM_Load (R0=address) ---
+@ --- ASM_Load (R0=address, R1=memory selection) ---
 @ BLOCKING FUNCTION - !
 @ Uses _pulse_enable and _wait_for_done
 
@@ -316,9 +313,9 @@ ASM_Load:
     LSL     R3, R0, #3          
     ORR     R2, R2, R3
 
-    MOV     R3, #0
+    @MOV     R3, #0
     @ SELECTION MEMORY BIT
-    LSL     R3, R3, #20
+    LSL     R3, R1, #20
     ORR     R2, R2, R3
     
     STR     R2, [R4, #PIO_INSTR_OFS]
