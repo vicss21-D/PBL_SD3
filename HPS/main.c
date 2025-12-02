@@ -1,7 +1,4 @@
 /*
- * =========================================================================
- * main_menu_test.c: COMPLETE FINAL VERSION - INTEGRATED WITH MOUSE
- * =========================================================================
  * 
  * Image Processing System with FPGA Hardware Acceleration
  * Supports BMP loading, zoom algorithms, mouse input, and memory management
