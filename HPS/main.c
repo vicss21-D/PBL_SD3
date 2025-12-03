@@ -40,19 +40,24 @@
 #define MAX_REGIONAL_ZOOM_LEVELS 3
 
 /* Regional zoom context */
+/* Regional zoom context */
 typedef struct {
-    int x;              /* Top-left X coordinate */
-    int y;              /* Top-left Y coordinate */
-    int width;          /* Width of region */
-    int height;         /* Height of region */
-    int base_width;     /* Original width */
-    int base_height;    /* Original height */
-    int zoom_level;     /* Current zoom level (0 = original) */
+    int x;                    /* Top-left X coordinate */
+    int y;                    /* Top-left Y coordinate */
+    int width;                /* Width of region */
+    int height;               /* Height of region */
+    int base_width;           /* Original width */
+    int base_height;          /* Original height */
+    int zoom_level;           /* Current zoom level (0 = original) */
     
     /* Buffer stack to store each zoom state */
     uint8_t *zoom_buffers[MAX_REGIONAL_ZOOM_LEVELS];
     int buffer_sizes[MAX_REGIONAL_ZOOM_LEVELS];
+    
+    /* Buffer com a imagem completa de base (preserva zoom global) */
+    uint8_t *original_full_image;
 } RegionalZoomContext;
+
 
 /* Global mouse file descriptor */
 int mouse_fd_global = -1;
@@ -108,7 +113,6 @@ void clear_input_buffer(void) {
  */
 void wait_for_enter(void) {
     printf("\nPressione Enter para continuar...");
-    clear_input_buffer();
     getchar();
 }
 
@@ -446,19 +450,13 @@ void print_matrix(const uint8_t *data, int width, int height) {
 }
 
 /* ===================================================================
- * REGIONAL ZOOM FUNCTION
+ * REGIONAL ZOOM START
  * =================================================================== */
-
-/**
- * @brief Performs regional zoom on a user-selected area
- * @param image_data Original image buffer (for restore after overlay)
- * @return 0 on success, -1 on failure
- */
-
-int regional_zoom_start(RegionalZoomContext *ctx) {
+int regional_zoom_start(RegionalZoomContext *ctx, int global_zoom_level) {
     int corner1_x, corner1_y, corner2_x, corner2_y;
     
     printf("\n=== INICIO DO ZOOM REGIONAL ===\n");
+    printf("Zoom global atual: %d\n", global_zoom_level);
     
     /* Capture area using standard mouse function */
     if (capture_mouse_area(&corner1_x, &corner1_y, &corner2_x, &corner2_y) != 0) {
@@ -478,7 +476,7 @@ int regional_zoom_start(RegionalZoomContext *ctx) {
         return -1;
     }
     
-    if (ctx->x < 0 || ctx->y < 0 || 
+    if (ctx->x < 0 || ctx->y < 0 ||
         ctx->x + ctx->width > IMG_WIDTH || ctx->y + ctx->height > IMG_HEIGHT) {
         printf("ERRO: Area selecionada fora dos limites.\n");
         return -1;
@@ -495,13 +493,56 @@ int regional_zoom_start(RegionalZoomContext *ctx) {
         ctx->buffer_sizes[i] = 0;
     }
     
-    printf("\nJanela regional configurada:\n");
-    printf("  Posicao: (%d, %d)\n", ctx->x, ctx->y);
-    printf("  Tamanho: %dx%d\n", ctx->width, ctx->height);
-    printf("  Max zoom levels: %d\n", MAX_REGIONAL_ZOOM_LEVELS);
+    /*  DETERMINAR DE QUAL MEMÓRIA LER BASEADO NO ZOOM GLOBAL */
+    int source_memory = (global_zoom_level > 0) ? 1 : 0;
+    
+    printf("\n[INIT] Salvando imagem base completa da memoria %d...\n", source_memory);
+    printf("       (zoom global = %d, fonte = %s)\n", 
+           global_zoom_level, 
+           source_memory == 1 ? "Secondary (zoom-in aplicado)" : "Primary (original)");
+    
+    /*  Alocar e salvar imagem completa de base */
+    ctx->original_full_image = (uint8_t*)malloc(IMG_WIDTH * IMG_HEIGHT);
+    if (!ctx->original_full_image) {
+        printf("ERRO: Falha ao alocar buffer de imagem base.\n");
+        return -1;
+    }
+    
+    /* Ler da memória correta (1 se zoom global > 0, senão 0) */
+    for (int addr = 0; addr < IMG_WIDTH * IMG_HEIGHT; addr++) {
+        ctx->original_full_image[addr] = (uint8_t)ASM_Load(addr, source_memory);
+    }
+    
+    /*  Salvar nível 0 (região inicial) extraída da imagem base */
+    printf("[INIT] Criando cache do nível 0 (estado inicial)...\n");
+    ctx->zoom_buffers[0] = (uint8_t*)malloc(ctx->width * ctx->height);
+    if (!ctx->zoom_buffers[0]) {
+        printf("ERRO: Falha ao alocar cache nível 0.\n");
+        free(ctx->original_full_image);
+        return -1;
+    }
+    
+    ctx->buffer_sizes[0] = ctx->width * ctx->height;
+    
+    /* Extrair região da imagem base já salva */
+    for (int row = 0; row < ctx->height; row++) {
+        for (int col = 0; col < ctx->width; col++) {
+            int img_addr = (ctx->y + row) * IMG_WIDTH + (ctx->x + col);
+            int buf_idx = row * ctx->width + col;
+            ctx->zoom_buffers[0][buf_idx] = ctx->original_full_image[img_addr];
+        }
+    }
+    
+    printf("\n>>> Contexto inicializado:\n");
+    printf("    Janela: (%d, %d) tamanho %dx%d\n", ctx->x, ctx->y, ctx->width, ctx->height);
+    printf("    Fonte: Memoria %d (zoom_global=%d)\n", source_memory, global_zoom_level);
+    printf("    Imagem base: %d bytes\n", IMG_WIDTH * IMG_HEIGHT);
+    printf("    Cache nível 0: %d pixels\n", ctx->buffer_sizes[0]);
+    printf("    Max zoom levels: %d\n", MAX_REGIONAL_ZOOM_LEVELS);
     
     return 0;
 }
+
 
 /* ===================================================================
  * REGIONAL ZOOM CLEANUP
@@ -509,6 +550,15 @@ int regional_zoom_start(RegionalZoomContext *ctx) {
 
 void regional_zoom_cleanup(RegionalZoomContext *ctx) {
     printf("\nLimpando buffers de zoom...\n");
+    
+    /*  Liberar imagem base */
+    if (ctx->original_full_image != NULL) {
+        free(ctx->original_full_image);
+        ctx->original_full_image = NULL;
+        printf("  Imagem base liberada\n");
+    }
+    
+    /* Liberar cache de zooms */
     for (int i = 0; i < MAX_REGIONAL_ZOOM_LEVELS; i++) {
         if (ctx->zoom_buffers[i] != NULL) {
             free(ctx->zoom_buffers[i]);
@@ -521,9 +571,8 @@ void regional_zoom_cleanup(RegionalZoomContext *ctx) {
 /* ===================================================================
  * REGIONAL ZOOM APPLY
  * =================================================================== */
-
-int regional_zoom_apply(RegionalZoomContext *ctx, uint8_t *image_data, 
-                       int global_zoom_level, int operation) {
+int regional_zoom_apply(RegionalZoomContext *ctx, uint8_t *image_data,
+                        int global_zoom_level, int operation) {
     
     /* Validate zoom out limit */
     if (operation == ZOOM_OUT && ctx->zoom_level <= 0) {
@@ -541,7 +590,7 @@ int regional_zoom_apply(RegionalZoomContext *ctx, uint8_t *image_data,
     printf("Zoom level da janela: %d | Zoom global: %d\n", ctx->zoom_level, global_zoom_level);
     
     /* ============================================================
-     * ZOOM OUT: RESTAURAR BUFFER ANTERIOR
+     * ZOOM OUT: RESTAURAR BUFFER ANTERIOR DO CACHE
      * ============================================================ */
     if (operation == ZOOM_OUT) {
         printf("\n[ZOOM OUT] Restaurando buffer do nivel %d...\n", ctx->zoom_level - 1);
@@ -553,30 +602,17 @@ int regional_zoom_apply(RegionalZoomContext *ctx, uint8_t *image_data,
             return -1;
         }
         
-        /* Determinar memória de onde ler o background */
-        int bg_mem = (prev_level == 0 && global_zoom_level > 0) ? 1 : 0;
+        printf("  [CACHE] Carregando nível %d do cache (%d pixels)...\n",
+               prev_level, ctx->buffer_sizes[prev_level]);
         
-        /* Salvar background completo */
-        uint8_t *full_background = (uint8_t*)malloc(IMG_WIDTH * IMG_HEIGHT);
-        if (!full_background) {
-            printf("ERRO: Falha ao alocar background.\n");
-            return -1;
-        }
-        
-        printf("  Salvando background da memoria %d...\n", bg_mem);
-        for (int addr = 0; addr < IMG_WIDTH * IMG_HEIGHT; addr++) {
-            full_background[addr] = (uint8_t)ASM_Load(addr, bg_mem);
-        }
-        
-        /* Reset e restaurar */
-        printf("  RESET e restaurando estado anterior...\n");
+        /* Reset e recarregar imagem BASE completa (já veio da memória correta) */
         ASM_Reset();
         ASM_Pulse_Enable();
         usleep(PULSE_DELAY_US);
         
-        /* Restaurar background */
+        /* Restaurar background da imagem base salva (não precisa ler da FPGA) */
         for (int addr = 0; addr < IMG_WIDTH * IMG_HEIGHT; addr++) {
-            ASM_Store(addr, full_background[addr], 0);
+            ASM_Store(addr, ctx->original_full_image[addr], 0);
         }
         
         /* Sobrepor buffer do nível anterior */
@@ -594,8 +630,6 @@ int regional_zoom_apply(RegionalZoomContext *ctx, uint8_t *image_data,
         ASM_Refresh();
         usleep(REFRESH_DELAY_US);
         
-        free(full_background);
-        
         /* Liberar buffer do nível atual (não precisamos mais) */
         if (ctx->zoom_buffers[ctx->zoom_level] != NULL) {
             free(ctx->zoom_buffers[ctx->zoom_level]);
@@ -604,79 +638,121 @@ int regional_zoom_apply(RegionalZoomContext *ctx, uint8_t *image_data,
         
         /* Decrementar zoom level */
         ctx->zoom_level--;
-        
         printf("\n>>> ZOOM OUT concluido! Nivel: %d\n\n", ctx->zoom_level);
         return 0;
     }
     
     /* ============================================================
-     * ZOOM IN: PROCESSAR E SALVAR NO BUFFER
+     * ZOOM IN: PROCESSAR E SALVAR NO BUFFER (COM CACHE)
      * ============================================================ */
     
-    /* Determinar memória de leitura */
-    int read_mem = (ctx->zoom_level == 0 && global_zoom_level > 0) ? 1 : 0;
+    int target_level = ctx->zoom_level + 1;
+    
+    /* VERIFICAR SE JÁ EXISTE NO CACHE (CACHE HIT) */
+    if (ctx->zoom_buffers[target_level] != NULL) {
+        printf("\n[CACHE HIT] Nivel %d já existe no cache! Carregando...\n", target_level);
+        
+        /* Carregar do cache sem processar na FPGA */
+        ASM_Reset();
+        ASM_Pulse_Enable();
+        usleep(PULSE_DELAY_US);
+        
+        /* Restaurar imagem base */
+        for (int addr = 0; addr < IMG_WIDTH * IMG_HEIGHT; addr++) {
+            ASM_Store(addr, ctx->original_full_image[addr], 0);
+        }
+        
+        /* Sobrepor região do cache */
+        for (int row = 0; row < ctx->height; row++) {
+            for (int col = 0; col < ctx->width; col++) {
+                int img_addr = (ctx->y + row) * IMG_WIDTH + (ctx->x + col);
+                int buf_idx = row * ctx->width + col;
+                ASM_Store(img_addr, ctx->zoom_buffers[target_level][buf_idx], 0);
+            }
+        }
+        
+        ASM_Refresh();
+        usleep(REFRESH_DELAY_US);
+        
+        ctx->zoom_level = target_level;
+        printf(">>> ZOOM IN concluido! Nivel: %d (do cache)\n\n", ctx->zoom_level);
+        return 0;
+    }
+    
+    /* CACHE MISS: PROCESSAR NA FPGA */
+    printf("\n[CACHE MISS] Nivel %d nao existe. Processando na FPGA...\n", target_level);
     
     /* Alocar buffers */
-    uint8_t *full_background = (uint8_t*)malloc(IMG_WIDTH * IMG_HEIGHT);
+    uint8_t *current_image = (uint8_t*)malloc(IMG_WIDTH * IMG_HEIGHT);
     uint8_t *region_buffer = (uint8_t*)malloc(ctx->width * ctx->height);
     
-    if (!full_background || !region_buffer) {
+    if (!current_image || !region_buffer) {
         printf("ERRO: Falha ao alocar memoria.\n");
-        if (full_background) free(full_background);
+        if (current_image) free(current_image);
         if (region_buffer) free(region_buffer);
         return -1;
     }
     
-    /* PASSO 1: Salvar background completo */
-    printf("\n[1/6] Salvando background da memoria %d...\n", read_mem);
-    for (int addr = 0; addr < IMG_WIDTH * IMG_HEIGHT; addr++) {
-        full_background[addr] = (uint8_t)ASM_Load(addr, read_mem);
+    /* PASSO 1: Obter imagem atual */
+    printf("\n[1/6] Preparando imagem atual...\n");
+    
+    if (ctx->zoom_level > 0) {
+        /* Já tem zoom regional aplicado, ler da tela (Primary mem) */
+        printf("  Lendo da FPGA (Primary Memory) - zoom regional nivel %d\n", ctx->zoom_level);
+        for (int addr = 0; addr < IMG_WIDTH * IMG_HEIGHT; addr++) {
+            current_image[addr] = (uint8_t)ASM_Load(addr, 0);
+        }
+    } else {
+        /* Primeiro zoom regional, usar a imagem base salva */
+        printf("  Usando imagem base salva (nivel 0");
+        printf(global_zoom_level > 0 ? " - origem: mem 1)\n" : " - origem: mem 0)\n");
+        memcpy(current_image, ctx->original_full_image, IMG_WIDTH * IMG_HEIGHT);
     }
     
-    /* PASSO 2: Extrair e SALVAR região atual no buffer ANTES de processar */
+    /* PASSO 2: Salvar estado ATUAL da região no cache ANTES de processar */
     printf("\n[2/6] Salvando estado atual no buffer (nivel %d)...\n", ctx->zoom_level);
     
     /* Alocar buffer para este nível */
     ctx->zoom_buffers[ctx->zoom_level] = (uint8_t*)malloc(ctx->width * ctx->height);
     if (ctx->zoom_buffers[ctx->zoom_level] == NULL) {
         printf("ERRO: Falha ao alocar buffer de zoom.\n");
-        free(full_background);
+        free(current_image);
         free(region_buffer);
         return -1;
     }
+    
     ctx->buffer_sizes[ctx->zoom_level] = ctx->width * ctx->height;
     
-    /* Salvar estado atual no buffer */
+    /* Extrair e salvar região atual */
     for (int row = 0; row < ctx->height; row++) {
         for (int col = 0; col < ctx->width; col++) {
             int img_addr = (ctx->y + row) * IMG_WIDTH + (ctx->x + col);
-            int pixel = ASM_Load(img_addr, read_mem);
             int buf_idx = row * ctx->width + col;
-            
-            ctx->zoom_buffers[ctx->zoom_level][buf_idx] = (uint8_t)pixel;
-            region_buffer[buf_idx] = (uint8_t)pixel;
+            ctx->zoom_buffers[ctx->zoom_level][buf_idx] = current_image[img_addr];
+            region_buffer[buf_idx] = current_image[img_addr];
         }
     }
-    printf("  Estado salvo: %d pixels no buffer[%d]\n", 
+    
+    printf("  Estado salvo: %d pixels no buffer[%d]\n",
            ctx->buffer_sizes[ctx->zoom_level], ctx->zoom_level);
     
-    /* PASSO 3: Reset e enviar região para FPGA */
-    printf("\n[3/6] RESET e enviando regiao para FPGA...\n");
+    /* PASSO 3: Reset e enviar IMAGEM COMPLETA para FPGA */
+    printf("\n[3/6] RESET e enviando IMAGEM COMPLETA para FPGA...\n");
     ASM_Reset();
     ASM_Pulse_Enable();
     usleep(PULSE_DELAY_US);
     
-    for (int row = 0; row < ctx->height; row++) {
-        for (int col = 0; col < ctx->width; col++) {
-            int fpga_addr = row * IMG_WIDTH + col;
-            ASM_Store(fpga_addr, region_buffer[row * ctx->width + col], 0);
-        }
+    /* Enviar imagem completa (não apenas a região) */
+    for (int addr = 0; addr < IMG_WIDTH * IMG_HEIGHT; addr++) {
+        ASM_Store(addr, current_image[addr], 0);
     }
-    ASM_Refresh();
+    
+    //ASM_Refresh();
     usleep(REFRESH_DELAY_US);
+    printf("  Imagem completa enviada (%d pixels)\n", IMG_WIDTH * IMG_HEIGHT);
     
     /* PASSO 4: Executar NearestNeighbor */
-    printf("\n[4/6] Executando NearestNeighbor...\n");
+    printf("\n[4/6] Executando NearestNeighbor na imagem completa...\n");
     NearestNeighbor();
     
     int timeout = 0;
@@ -686,7 +762,7 @@ int regional_zoom_apply(RegionalZoomContext *ctx, uint8_t *image_data,
         if (timeout > TIMEOUT_LOOPS) {
             printf("ERRO: Timeout!\n");
             free(region_buffer);
-            free(full_background);
+            free(current_image);
             return -1;
         }
     }
@@ -694,36 +770,61 @@ int regional_zoom_apply(RegionalZoomContext *ctx, uint8_t *image_data,
     if (ASM_Get_Flag_Error() != 0) {
         printf("ERRO: Flag de erro!\n");
         free(region_buffer);
-        free(full_background);
+        free(current_image);
         return -1;
     }
     
     ASM_Pulse_Enable();
     printf("  NearestNeighbor concluido\n");
     
-    /* PASSO 5: Ler resultado processado */
-    printf("\n[5/6] Lendo resultado da Secondary...\n");
+    /* PASSO 5: Ler APENAS a região processada da Secondary */
+    printf("\n[5/6] Lendo APENAS a regiao processada (%d,%d) %dx%d...\n",
+           ctx->x, ctx->y, ctx->width, ctx->height);
+    
+    /* Ler apenas a região nas coordenadas corretas da imagem processada */
     for (int row = 0; row < ctx->height; row++) {
         for (int col = 0; col < ctx->width; col++) {
-            int fpga_addr = row * IMG_WIDTH + col;
-            region_buffer[row * ctx->width + col] = (uint8_t)ASM_Load(fpga_addr, 1);
+            /* Lê da posição REAL da região na imagem processada (Secondary) */
+            int fpga_addr = (ctx->y + row) * IMG_WIDTH + (ctx->x + col);
+            int buf_idx = row * ctx->width + col;
+            region_buffer[buf_idx] = (uint8_t)ASM_Load(fpga_addr, 1);
         }
     }
     
+    printf("  Regiao lida: %d pixels\n", ctx->width * ctx->height);
+    
+    /* Alocar buffer para o novo nível e salvar no cache */
+    ctx->zoom_buffers[target_level] = (uint8_t*)malloc(ctx->width * ctx->height);
+    if (!ctx->zoom_buffers[target_level]) {
+        printf("ERRO: Falha ao alocar cache nivel %d.\n", target_level);
+        free(region_buffer);
+        free(current_image);
+        return -1;
+    }
+    
+    ctx->buffer_sizes[target_level] = ctx->width * ctx->height;
+    memcpy(ctx->zoom_buffers[target_level], region_buffer, ctx->width * ctx->height);
+    
+    printf("  Regiao salva no cache[%d]: %d pixels\n", 
+           target_level, ctx->buffer_sizes[target_level]);
+    
     /* PASSO 6: Reset, restaurar background e sobrepor resultado */
-    printf("\n[6/6] RESET, restaurando background e sobrepondo...\n");
+    printf("\n[6/6] RESET, restaurando background e sobrepondo regiao processada...\n");
     ASM_Reset();
     ASM_Pulse_Enable();
     usleep(PULSE_DELAY_US);
     
+    /* Restaurar imagem base completa (que veio da memória correta) */
     for (int addr = 0; addr < IMG_WIDTH * IMG_HEIGHT; addr++) {
-        ASM_Store(addr, full_background[addr], 0);
+        ASM_Store(addr, ctx->original_full_image[addr], 0);
     }
     
+    /* Sobrepor apenas a região processada */
     for (int row = 0; row < ctx->height; row++) {
         for (int col = 0; col < ctx->width; col++) {
             int img_addr = (ctx->y + row) * IMG_WIDTH + (ctx->x + col);
-            ASM_Store(img_addr, region_buffer[row * ctx->width + col], 0);
+            int buf_idx = row * ctx->width + col;
+            ASM_Store(img_addr, region_buffer[buf_idx], 0);
         }
     }
     
@@ -731,13 +832,13 @@ int regional_zoom_apply(RegionalZoomContext *ctx, uint8_t *image_data,
     usleep(REFRESH_DELAY_US);
     
     /* Incrementar zoom level */
-    ctx->zoom_level++;
+    ctx->zoom_level = target_level;
     
+    /* Liberar buffers temporários */
     free(region_buffer);
-    free(full_background);
+    free(current_image);
     
-    printf("\n>>> ZOOM IN concluido! Nivel: %d\n\n", ctx->zoom_level);
-    
+    printf("\n>>> ZOOM IN concluido! Nivel: %d (processado e cacheado)\n\n", ctx->zoom_level);
     return 0;
 }
 
@@ -823,15 +924,21 @@ void display_menu(int image_loaded, int image_sent_to_fpga, int zoom_level) {
     printf("\n--- Carga de Imagem (Buffer C) ---\n");
     printf(" 1. Carregar Imagem BMP\n");
     printf(" 2. Gerar Gradiente\n");
-    printf(" 3. Ler janela da FPGA (com mouse) e exibir matriz\n");
+    //printf(" 3. Ler janela da FPGA (com mouse) e exibir matriz\n");
    
     printf("\n--- Algoritmos de Processamento (FPGA) ---\n");
-    printf(" 4. NearestNeighbor (Zoom IN)\n");
-    printf(" 5. PixelReplication (Zoom IN)\n");
-    printf(" 6. Decimation (Zoom OUT)\n");
-    printf(" 7. BlockAveraging (Zoom OUT)\n");
-    printf(" 8. RESET\n");
-    printf(" 9. Zoom Regional (selecionar area com mouse)\n");
+    printf(" 3. NearestNeighbor (Zoom IN)\n");
+    printf(" 4. PixelReplication (Zoom IN)\n");
+    printf(" 5. Decimation (Zoom OUT)\n");
+    printf(" 6. BlockAveraging (Zoom OUT)\n");
+
+    printf("\n--- Controle ---\n");
+
+    printf(" 7. RESET\n");
+
+    printf("\n--- Zoom por área ---\n");
+
+    printf(" 8. Zoom Regional (selecionar area com mouse)\n");
    
     printf("\n----------------------------------------------------------\n");
     printf(" 0. Encerrar API e Sair\n");
@@ -1017,7 +1124,7 @@ int main(void) {
             }
 
             /* ==================== READ FPGA WINDOW WITH MOUSE ==================== */
-            case 3: {
+            case 10: {
                 if (!image_sent_to_fpga) {
                     printf("ERRO: Nenhuma imagem na VRAM do FPGA. Carregue uma imagem primeiro (Opcao 1 ou 2).\n");
                     break;
@@ -1086,9 +1193,9 @@ int main(void) {
             }
 
             /* ==================== ZOOM IN: NEAREST NEIGHBOR ==================== */
-            case 4:
+            case 3:
             /* ==================== ZOOM IN: PIXEL REPLICATION ==================== */
-            case 5: {
+            case 4: {
                 if (!image_sent_to_fpga) {
                     printf("ERRO: Nenhuma imagem na VRAM do FPGA. Carregue uma imagem primeiro (Opcao 1 ou 2).\n");
                     break;
@@ -1112,7 +1219,7 @@ int main(void) {
                
                 printf("=== EXECUTANDO ALGORITMO (Zoom IN) ===\n");
                 int result;
-                if (option == 4) {
+                if (option == 3) {
                     result = execute_algorithm("NearestNeighbor", &NearestNeighbor);
                 } else {
                     result = execute_algorithm("PixelReplication", &PixelReplication);
@@ -1129,9 +1236,9 @@ int main(void) {
             }
 
             /* ==================== ZOOM OUT: DECIMATION ==================== */
-            case 6:
+            case 5:
             /* ==================== ZOOM OUT: BLOCK AVERAGING ==================== */
-            case 7: {
+            case 6: {
                 if (!image_sent_to_fpga) {
                     printf("ERRO: Nenhuma imagem na VRAM do FPGA. Carregue uma imagem primeiro (Opcao 1 ou 2).\n");
                     break;
@@ -1155,7 +1262,7 @@ int main(void) {
 
                 printf("=== EXECUTANDO ALGORITMO (Zoom OUT) ===\n");
                 int result;
-                if (option == 6) {
+                if (option == 5) {
                     result = execute_algorithm("Decimation", &Decimation);
                 } else {
                     result = execute_algorithm("BlockAveraging", &BlockAveraging);
@@ -1172,7 +1279,7 @@ int main(void) {
             }
 
             /* ==================== RESET ==================== */
-            case 8: {
+            case 7: {
                 printf("=== EXECUTANDO: RESET ===\n");
                 ASM_Reset();
                 zoom_level = 0;
@@ -1183,93 +1290,110 @@ int main(void) {
                 break;
             }
 
-            case 9: {
+            case 8: {
                 if (!image_sent_to_fpga) {
                     printf("ERRO: Carregue uma imagem primeiro.\n");
                     break;
                 }
+                
                 if (mouse_fd_global < 0) {
                     printf("ERRO: Mouse nao inicializado.\n");
                     break;
                 }
+                
+                /* Validação: zoom regional só funciona com zoom_level >= 0 */
                 if (zoom_level < 0) {
-                    printf("ERRO: Zoom Regional nao permitido (zoom_level < 0).\n");
+                    printf("\n=== ZOOM REGIONAL BLOQUEADO ===\n");
+                    printf("ERRO: Zoom Regional nao permitido com zoom-out aplicado.\n");
+                    printf("       Nivel de zoom atual: %d\n", zoom_level);
+                    printf("\nSolucao: Use 'Reset' (opcao 7) ou aplique zoom-in (opcoes 3 ou 4)\n");
                     break;
                 }
                 
                 RegionalZoomContext regional_ctx;
-                if (regional_zoom_start(&regional_ctx) != 0)
+                
+                /* Passar zoom_level para regional_zoom_start */
+                if (regional_zoom_start(&regional_ctx, zoom_level) != 0)
                     break;
                 
                 int regional_loop = 1;
                 while (regional_loop) {
                     printf("\n\n=== MENU ZOOM REGIONAL ===\n");
-                    printf("JANELA: Pos(%d,%d) Tamanho[%dx%d] ZoomLevel[%d/%d]\n",
-                           regional_ctx.x, regional_ctx.y,
-                           regional_ctx.width, regional_ctx.height,
-                           regional_ctx.zoom_level, MAX_REGIONAL_ZOOM_LEVELS - 1);
+                    printf("Zoom Global: %d | Regional: %d/%d\n",
+                        zoom_level,
+                        regional_ctx.zoom_level,
+                        MAX_REGIONAL_ZOOM_LEVELS - 1);
+                    printf("JANELA: Pos(%d,%d) Tamanho[%dx%d]\n",
+                        regional_ctx.x, regional_ctx.y,
+                        regional_ctx.width, regional_ctx.height);
+                    
+                    /* Mostrar status do cache */
+                    printf("Cache: [");
+                    for (int i = 0; i < MAX_REGIONAL_ZOOM_LEVELS; i++) {
+                        if (regional_ctx.zoom_buffers[i] != NULL) {
+                            if (i == regional_ctx.zoom_level)
+                                printf("*%d* ", i);
+                            else
+                                printf("%d ", i);
+                        } else {
+                            printf("_ ");
+                        }
+                    }
+                    printf("]\n");
+                    
                     printf("Controles:\n [+] Zoom IN\n [-] Zoom OUT\n [0] Voltar (ou ESC)\n");
                     printf("Aguardando comando... ");
-                    fflush(stdout); // Garante que o texto apareça antes de esperar a tecla
+                    fflush(stdout);
                     
-                    // Lê a tecla diretamente
                     char key = read_key_direct();
                     
-                    // Processa a tecla
                     switch (key) {
-                        case ZOOM_IN:  // '+'
-                        case '=':      // Aceita '=' também (tecla + sem shift) para facilitar
+                        case ZOOM_IN:
+                        case '=':
                             regional_zoom_apply(&regional_ctx, image_data, zoom_level, ZOOM_IN);
                             break;
-                            
-                        case ZOOM_OUT: // '-'
-                        case '_':      // Aceita '_' também
+                        
+                        case ZOOM_OUT:
+                        case '_':
                             regional_zoom_apply(&regional_ctx, image_data, zoom_level, ZOOM_OUT);
                             break;
-                            
+                        
                         case '0':
-                        case 27:       // Tecla ESC
+                        case 27: // ESC
                             regional_loop = 0;
                             break;
-                            
+                        
                         default:
                             printf("\nComando invalido: '%c'\n", key);
                             break;
                     }
-                    
-                    // Se não saiu, dá uma pequena pausa ou espera enter opcionalmente
-                    if (regional_loop) {
-                         // Opcional: usleep(100000); 
-                    }
                 }
-                // int regional_option;
-                // while (1) {
-                //     printf("\n\n=== MENU ZOOM REGIONAL ===\n");
-                //     printf("JANELA: Pos(%d,%d) Tamanho[%dx%d] ZoomLevel[%d/%d]\n",
-                //            regional_ctx.x, regional_ctx.y,
-                //            regional_ctx.width, regional_ctx.height,
-                //            regional_ctx.zoom_level, MAX_REGIONAL_ZOOM_LEVELS - 1);
-                //     printf(" 1. Zoom IN\n 2. Zoom OUT\n 0. Voltar\n: ");
-                    
-                //     if (scanf("%d", &regional_option) != 1) {
-                //         clear_input_buffer();
-                //         wait_for_enter();
-                //         continue;
-                //     }
-                    
-                //     if (regional_option == 0) break;
-                //     if (regional_option == 1)
-                //         regional_zoom_apply(&regional_ctx, image_data, zoom_level, ZOOM_IN);
-                //     else if (regional_option == 2)
-                //         regional_zoom_apply(&regional_ctx, image_data, zoom_level, ZOOM_OUT);
-                    
-                //     wait_for_enter();
-                // }
                 
-                /* Cleanup buffers before exiting */
+                /* RESTAURAR IMAGEM ORIGINAL AO SAIR */
+                printf("\n=== SAINDO DO ZOOM REGIONAL ===\n");
+                printf("Restaurando imagem original...\n");
+                
+                ASM_Reset();
+                zoom_level = 0;
+                ASM_Pulse_Enable();
+                usleep(PULSE_DELAY_US);
+                
+                /* Reenviar a imagem original do buffer (image_data) */
+                for (int addr = 0; addr < IMG_WIDTH * IMG_HEIGHT; addr++) {
+                    ASM_Store(addr, image_data[addr], 0);
+                }
+                
+                ASM_Refresh();
+                usleep(REFRESH_DELAY_US);
+                
+                printf(">>> Imagem original restaurada!\n");
+                
+                /* Cleanup buffers */
                 regional_zoom_cleanup(&regional_ctx);
+                ASM_Reset();
                 break;
             }
+
 
             /* ==================== EXIT ==================== */
             case 0: {
