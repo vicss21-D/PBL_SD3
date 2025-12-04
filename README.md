@@ -9,7 +9,8 @@
 </div>
 
 <div>
-  # Sumário
+ <details>
+  <summary><h1>Sumário</h1></summary>
 
 ## 1. [Sobre o Projeto](#sobre)
    - **Definição do problema**
@@ -102,6 +103,9 @@
    - Guia de operação e uso
    - Transferência de arquivos para a placa (SFTP)
    - Compilação e programação no Quartus
+
+</details>
+
   
 </div>
 
