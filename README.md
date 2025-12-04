@@ -29,7 +29,7 @@
 Este read.me detalha a arquitetura da solução desta etapa do projeto. Desenvolvedores interessados em sistemas embarcados críticos encontrarão no link a seguir maiores detalhes sobre a implementação sólida e modular das etapas anteriores desse projeto.</p>
 
 <a href="https://docs.kernel.org/input/index.html](https://github.com/vicss21-D/PBL-SD2">Etapa 2</a> <br>
-<a href="https://github.com/DestinyWolf/Problema-SD-2025-2">Etapa 1</a> <br>
+<a href="https://github.com/vicss21-D/PBL-SD2">Etapa 1</a> <br>
 
 </details>
    <details>
