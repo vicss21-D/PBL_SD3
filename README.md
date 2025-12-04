@@ -105,6 +105,7 @@
    - Compilação e programação no Quartus
 
 </details>
+<hr>
 
   
 </div>
