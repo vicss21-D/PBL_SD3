@@ -191,7 +191,7 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
     <li>Possuir conexão com a internet e ter a placa e o PC conectados na mesma rede (use o cabo de rede).</li>
     <li>Possuir o <strong>Git</strong> e o compilador <strong>GCC</strong> instalados.</li>
     <li>Utilizar uma placa de desenvolvimento <strong>DE1-SoC</strong>.</li>
-    <li>Ter o coprocessador gráfico carregado na FPGA (<a href="https://github.com/DestinyWolf/Problema-SD-2025-2](https://github.com/vicss21-D/PBL-SD2">Link do Repositório</a>).</li>
+    <li>Ter o coprocessador gráfico carregado na FPGA (<a href="https://github.com/vicss21-D/PBL-SD2">Link do Repositório</a>).</li>
     <li><strong>Monitor VGA:</strong> Para exibir o processamento de vídeo.</li>
     <li><strong>Mouse USB:</strong> Deve estar conectado à entrada USB da placa para interação.</li>
     <br>
@@ -217,6 +217,8 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
   <div align="center">
     <img src="https://github.com/user-attachments/assets/91857ab8-19d8-4030-ab0f-e0e8a63243b6" alt="Figura 2. Estrutura de arquivos" width="60%">
     <br><sub>Figura 2. A pasta do projeto deve conter estes elementos</sub> 
+  <br>
+    
   </div>
   
   <p align="center">
@@ -228,7 +230,8 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
   <h4>No lado da FPGA (Hardware):</h4>
   <p align="justify">&emsp;Acesse a pasta <code>FPGA</code> e compile o código utilizando o <strong>Quartus II</strong>. O arquivo <code>soc_system.qpf</code> é a base do projeto e deve ser sintetizado para gerar o bitstream <code>.sof</code>.</p>
   <a href="#GuiaQuartus">Como compilar no quartus e colocar o código na placa?</a>
-  
+ 
+ <br> 
 
   <div align="center">
     <img src="https://github.com/user-attachments/assets/2dfaa1b7-9378-4006-8545-4eaab9f983c1" alt="Figura 3. Arquivo soc_system.qpf" width="60%"> 
@@ -248,6 +251,95 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
   <p align="justify">&emsp;O comando <code>make run</code> irá compilar o código C e executar o programa automaticamente.</p>
 
 </details> 
+
+<details>
+  <summary><strong id="mouse_utils">Navegando pela main. Fluxo de operação</strong></summary>
+  <br>
+  
+  <p align="justify">&emsp;Aqui o usuário aprende como funciona a intrface em C.</p>
+  
+<h3>1. Inicialização e Execução</h3>
+<p>
+  Para iniciar o sistema, abra o terminal na pasta raiz do projeto. É necessário executar com privilégios de superusuário (<code>sudo</code>) para que o driver possa mapear a memória da FPGA e acessar os eventos do mouse.
+</p>
+<pre><code>sudo make run</code></pre>
+ <p>
+  O sistema fará o <em>boot</em> automático: detectará o driver do mouse (ex: <code>/dev/input/event2</code>), inicializará a ponte HPS-FPGA e resetará o hardware.
+</p>
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/010771fb-e591-4a8b-8306-db56a35f620a" alt="Tela de Boot e Detecção de Mouse" width="600px"> 
+
+  <p><em>Figura 1: Sequência de boot e detecção automática do mouse.</em></p>
+</div>
+
+<h3>2. O Painel de Controle (Dashboard)</h3>
+<p>
+  Ao iniciar, você verá o Menu Principal. Preste atenção na <strong>Barra de Status</strong> no topo da tela. Ela é o seu guia principal:
+</p>
+<ul>
+  <li><strong>Buffer C:</strong> Mostra se a imagem já está na memória RAM do Linux.</li>
+  <li><strong>FPGA VRAM:</strong> Mostra se a imagem já foi enviada para o hardware.</li>
+  <li><strong>Zoom Level:</strong> Monitora o nível atual de zoom (0 = Original).</li>
+</ul>
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/aef08e21-fe24-4285-86d3-d8648a112eb3" alt="Menu Principal Vazio" width="600px"> 
+
+
+  <p><em>Figura 2: Menu Principal mostrando o estado inicial do sistema.</em></p>
+</div>
+
+<h3>3. Carregando Dados (Workflow Básico)</h3>
+<p>
+  Antes de processar, você precisa de uma imagem. Selecione a <strong>Opção 1</strong> para carregar um arquivo BMP ou a <strong>Opção 2</strong> para gerar um gradiente de teste.
+</p>
+<p>
+  Após carregar, a Barra de Status mudará de <code>[VAZIA]</code> para <code>[CARREGADA]</code>.
+</p>
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/6eb12e9e-2a5a-4a13-987e-801377adc635" alt="Carregando Imagem" width="600px">
+  <p><em>Figura 3: Processo de carga de imagem e atualização de status.</em></p>
+</div>
+
+<h3>4. Funcionalidade Avançada: Zoom Regional Interativo</h3>
+<p>
+  Para utilizar o zoom seletivo com mouse, selecione a <strong>Opção 8</strong>. O sistema entrará no modo interativo:
+</p>
+
+<h4>Passo A: Seleção de Área</h4>
+<p>
+  Mova o mouse físico. As coordenadas X/Y aparecerão no terminal em tempo real.
+</p>
+<ul>
+  <li><strong>Botão Esquerdo:</strong> Define o primeiro canto do retângulo (Início).</li>
+  <li><strong>Botão Direito:</strong> Define o segundo canto (Fim) e confirma a seleção.</li>
+</ul>
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/7f6155fd-2199-4559-981b-ae0337478345" alt="Captura de Coordenadas" width="600px"> 
+
+  <p><em>Figura 4: Interface de captura de área mostrando as coordenadas em tempo real.</em></p>
+</div>
+
+<h4>Passo B: Navegação e Cache simulada</h4>
+<p>
+  Após selecionar a área, o sistema exibe o menu de navegação. Observe o indicador de <strong>Cache</strong> (ex: <code>[*0* _ _]</code>), que mostra quais níveis já foram processados.
+</p>
+<ul>
+  <li>Pressione <strong><code>+</code></strong> para aplicar Zoom In (Processar na FPGA).</li>
+  <li>Pressione <strong><code>-</code></strong> para aplicar Zoom Out (Recuperar do Cache instantaneamente).</li>
+  <li>Pressione <strong><code>0</code></strong> para sair e restaurar a imagem original.</li>
+</ul>
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/d4935308-df49-41f9-b10f-394e0873ef9b" alt="Menu de Navegação Regional" width="600px">  
+
+  <p><em>Figura 5: Sub-menu de navegação com status do cache visualizado.</em></p>
+</div>
+</details>
+
 <br>
 
 <h1 id="softwares">Softwares e Tecnologias Utilizados 🔻</h1>
@@ -340,12 +432,12 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
     <li><strong>Camada de Hardware (FPGA):</strong> É o "músculo". Um circuito digital customizado que possui sua própria memória de vídeo (VRAM) e é composto pelas instruções em verilog. Aqui estão os ajustes de clock, PIO’s e memória, <a href="https://github.com/DestinyWolf/Problema-SD-2025-2">entenda mais aqui</a>.</li>
   </ul>
   
-
-  <h3>Como Funciona?</strong></h3>
+<details>
+  <summary><strong>Como Funciona?</strong></summary>
   <p align="justify">&emsp;A arquitetura do sistema fundamenta-se no paradigma de <strong>Computação Heterogênea</strong> <a href="https://abracloud.com.br/computacao-heterogenea-futuro-processamento-dados/">(veja mais sobre aqui)</a> em um <em>System-on-Chip</em> (SoC), onde o fluxo de controle é particionado entre um processador de propósito geral (ARM Cortex-A9) e um núcleo de propriedade intelectual (IP Core) customizado na FPGA. A implementação do Zoom Regional opera através de um mecanismo de <strong>Co-design Hardware/Software</strong> que otimiza o <em>trade-off</em> entre latência de processamento e uso de memória.</p>
 
   <h3>Fluxo de Zoom In (Hardware e Comunicação)</h3>
- <p align="justify">&emsp;No domínio do software (Host), o gerenciamento de contexto utiliza uma estrutura de dados do tipo <strong>Pilha (LIFO - Last In, First Out)</strong> alocada na SDRAM para preservar os estados de buffer anteriores. Durante a operação de Zoom In, o sistema processa a imagem completa, extraindo e salvando no buffer apenas os pixels correspondentes à Região de Interesse (ROI). Em seguida, transfere esses dados através da ponte <strong>Lightweight HPS-to-FPGA <a href="https://www.bing.com/ck/a?!&&p=3211db47cb642146d7c9e5088d667dc052a50c31eef7d9b772b636cabf565ce8JmltdHM9MTc2NDcyMDAwMA&ptn=3&ver=2&hsh=4&fclid=0d258bc0-949a-6726-24bc-98a795bf66bd&psq=protocolo+AXI&u=a1aHR0cHM6Ly9kb2N1bWVudGF0aW9uLXNlcnZpY2UuYXJtLmNvbS9zdGF0aWMvNjhiMDNiZWIwMWFlOTUyZDk1NTlmOWVi">AXI</a></strong>, utilizando mapeamento de I/O (MMIO) sobre controladores PIO (Parallel I/O).</p>
+ <p align="justify">&emsp;No domínio do software (Host), o gerenciamento de contexto utiliza uma estrutura de dados do tipo <strong>Pilha (LIFO - Last In, First Out)</strong> alocada na SDRAM para preservar os estados de buffer anteriores. Durante a operação de Zoom In, o sistema processa a imagem completa, extraindo e salvando no buffer apenas os pixels correspondentes à Região de Interesse (ROI). Em seguida, transfere esses dados através da ponte <strong>Lightweight HPS-to-FPGA. <a href="https://www.bing.com/ck/a?!&&p=3211db47cb642146d7c9e5088d667dc052a50c31eef7d9b772b636cabf565ce8JmltdHM9MTc2NDcyMDAwMA&ptn=3&ver=2&hsh=4&fclid=0d258bc0-949a-6726-24bc-98a795bf66bd&psq=protocolo+AXI&u=a1aHR0cHM6Ly9kb2N1bWVudGF0aW9uLXNlcnZpY2UuYXJtLmNvbS9zdGF0aWMvNjhiMDNiZWIwMWFlOTUyZDk1NTlmOWVi">AXI</a></strong>, utilizando mapeamento de I/O (MMIO) sobre controladores PIO (Parallel I/O). Esse algoritmo SIMULA uma cache.</p>
 
 <p align="justify">&emsp;A comunicação ocorre de forma síncrona e sequencial, onde o processador escreve os dados pixel a pixel diretamente no barramento, sem o uso de acesso direto à memória (DMA). O hardware dedicado recebe esse fluxo de dados e aplica o algoritmo de <strong>Nearest Neighbor</strong> (Vizinho Mais Próximo) ponto a ponto, armazenando o resultado na memória interna enquanto o processador aguarda a finalização em estado de <em>polling</em> nos registradores de status.</p>
   <h3>Fluxo de Zoom Out (Recuperação e Overlay)</h3>
@@ -357,6 +449,13 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
     <img src="https://github.com/user-attachments/assets/04e349ab-7020-49cc-ade7-a932a07867c9" alt="Figura. Fluxo de dados" width="70%"> 
     <br><sub>Figura. Diagrama do funcionamento geral</sub>
   </div>
+   <div align="center">
+    <img src="https://github.com/user-attachments/assets/ae6be45b-c3a8-4ee9-bdcf-21ff6ccabcfb" alt="Figura. Fluxo de dados" width="70%"> 
+    <br><sub>Figura. Funcionando!</sub> 
+
+  </div>
+</details>
+
 <details>
   <br>
   
@@ -454,6 +553,58 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
 
 <details>
   <br>
+  
+  <div align="center">
+  <img src="https://github.com/user-attachments/assets/0ca887fd-970f-42bc-b811-3483e2ca2691" width="70%" /> 
+
+    
+  <br><sub>Figura: Diagrama da arquitetura Assembly </sub>
+  </div>
+  <summary><strong>Aquitetura do Assembly</strong></summary>
+    <p>
+  A biblioteca <code>api.s</code> implementa uma arquitetura de <strong>Driver de Dispositivo em Espaço de Usuário (User-Space Device Driver)</strong> baseada em MMIO. O design prioriza a eficiência do barramento e a organização lógica do código.
+</p>
+
+<h4>1. Encapsulamento e Visibilidade (Public vs. Private)</h4>
+<p>
+  A arquitetura do driver organiza o código em dois níveis de visibilidade para garantir modularidade e manutenção (DRY - <em>Don't Repeat Yourself</em>):
+</p>
+<ul>
+  <li><strong>Funções Públicas (Visíveis ao C):</strong> São os pontos de entrada globais (<code>.global</code>) invocados pela aplicação principal (ex: <code>ASM_Store</code>, <code>API_initialize</code>). Elas validam parâmetros e gerenciam o fluxo de alto nível.</li>
+  <li><strong>Funções Privadas (Invisíveis ao C):</strong> Rotinas internas (ex: <code>_pulse_enable_safe</code>, <code>_ASM_Set_Instruction</code>) que não são exportadas para o linker. Elas encapsulam a lógica repetitiva de manipulação de registradores e bitwise, reduzindo a duplicação de código.</li>
+</ul>
+
+<h4>2. Protocolo de Instrução Unificado (29-bit Packet)</h4>
+<p>
+  Para maximizar a eficiência e evitar múltiplas escritas no barramento para uma única operação, a arquitetura utiliza um <strong>Pacote de Instrução Unificado</strong>. Todas as informações necessárias para configurar o hardware são compactadas em um único registrador de 32 bits (utilizando 29 bits efetivos):
+</p>
+<ul>
+  <li><strong>[Bits 28..21] O Quê (8 bits):</strong> O valor do pixel (Payload) a ser escrito (em operações de escrita).</li>
+  <li><strong>[Bit 20] Onde - Banco (1 bit):</strong> Seleção do banco de memória alvo (Principal ou Secundária).</li>
+  <li><strong>[Bits 19..3] Onde - Endereço (17 bits):</strong> O endereço linear da memória de vídeo.</li>
+  <li><strong>[Bits 2..0] O Que Fazer (3 bits):</strong> O <em>Opcode</em> da operação (ex: Store, Load, Algoritmos).</li>
+</ul>
+
+<h4>3. Canais de Retorno e Controle Dedicados</h4>
+<p>
+  Enquanto o envio de comandos é unificado, o retorno de dados e o controle de fluxo utilizam canais de I/O dedicados (PIOs) para simplificar o hardware:
+</p>
+<ul>
+  <li><strong>Canal de Leitura de Dados (8 bits):</strong> Um PIO exclusivo (<code>PIO_DATAOUT</code>) dedicado a receber o valor do pixel retornado pela FPGA durante operações de leitura (LOAD).</li>
+  <li><strong>Interface de Status (4 bits):</strong> Um canal paralelo para leitura das Flags de estado do hardware (Done, Error, Max/Min Zoom).</li>
+  <li><strong>Sinal de Controle (1 bit):</strong> Um sinal de <em>Enable</em> simples utilizado exclusivamente para disparar (trigger) o início do processamento configurado no pacote de instrução.</li>
+</ul>
+
+<hr>
+
+<blockquote>
+  <p><strong>Resumo do Fluxo:</strong> O processador monta e envia um "pacote completo" (Ordem + Endereço + Dados) em um ciclo, pulsa o <em>Enable</em>, e aguarda o resultado ou status através dos canais dedicados de retorno.</p>
+</blockquote>
+
+</details>
+
+<details>
+  <br>
     <div align="center">
   <img src="https://github.com/user-attachments/assets/9f7a6a27-a91d-4ca5-b496-e6e6f30ad62b" width="50%" /> 
     
@@ -516,7 +667,7 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
 </details>
 
 <br>
-<h1 id="algoritmos">Detalhamento dos algoritmos🔻</h1>
+<h1 id="algoritmos">Detalhamento dos novos algoritmos🔻</h1>
 <br>
 
 <details>
@@ -709,6 +860,7 @@ typedef struct {
   </ul>
 
 </details>
+
 <br>
 <h1 id="testes">Testes 🔻</h1>
 <br>
