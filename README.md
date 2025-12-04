@@ -8,6 +8,108 @@
   </p>
 </div>
 
+<div>
+ <details>
+  <summary><h1>Sumário</h1></summary>
+
+## 1. [Sobre o Projeto](#sobre)
+   - **Definição do problema**
+   - **Introdução**
+   - **Colaboradores**
+   - **Referências**
+
+## 2. [Requisitos do Sistema](#requisitos)
+   ### Hardware, Software e Dependências
+   - Kit de Desenvolvimento (DE1-SoC Cyclone V)
+   - Sistema Operacional Linux Embarcado
+   - Compilador GCC e GNU Assembler
+   - Privilégios sudo para acesso `/dev/mem`
+   
+   ### Detalhamento dos Periféricos
+   - **Mouse**: Dell M-UVDEL1 (USB)
+   - **Teclado**: Lenovo KU-1619 (USB)
+   - **Monitor**: Philips 191EL (VGA 19")
+
+## 3. [Instalação e Execução](#instalacao)
+   ### Guia Passo a Passo
+   - Requisitos prévios
+   - Instalação do projeto (download e transferência SFTP)
+   - Compilação e execução
+     - FPGA: Quartus II (`soc_system.qpf`)
+     - HPS: `sudo make run`
+   
+   ### Fluxo de Operação
+   - Inicialização e detecção automática de mouse
+   - Painel de controle (Dashboard)
+   - Carregamento de imagens BMP
+   - Zoom regional interativo com mouse
+
+## 4. [Softwares e Tecnologias Utilizados](#softwares)
+   ### Ferramentas de Desenvolvimento
+   - **Verilog**: Descrição de hardware (FPGA)
+   - **Linguagem C**: Interface de usuário e drivers
+   - **Assembly ARMv7**: Controle de baixo nível
+   - **Quartus Prime**: Síntese e programação FPGA
+   - **VS Code**: Ambiente de desenvolvimento
+   - **GCC**: Compilação para ARM
+   - **Nano**: Edição no terminal Linux embarcado
+   
+   ### Visão Geral da Placa
+   - Arquitetura HPS + FPGA (Cyclone V SoC)
+   - Integração via FPGA Bridges
+   - Protocolo AXI
+
+## 5. [Menu Arquitetura](#processador)
+   ### Arquitetura em Camadas
+   - **Camada de Aplicação (C)**: Interface, I/O, gerenciamento de arquivos
+   - **Camada de Driver (Assembly)**: API de abstração de hardware
+   - **Camada de Hardware (FPGA)**: Processamento gráfico dedicado
+   
+   ### Funcionamento do Sistema
+   - **Fluxo de Zoom In**: Processamento via FPGA + cache em pilha
+   - **Fluxo de Zoom Out**: Recuperação de estado + overlay
+   
+   ### Detalhes Arquiteturais
+   - Arquitetura do código C
+   - Arquitetura do Assembly (Driver MMIO)
+   - Arquitetura do Verilog (FSM + ACU + Memória Tri-Buffer)
+
+## 6. [Detalhamento dos Algoritmos](#algoritmos)
+   ### Módulos em C
+   - **mouse_utils.c**: 
+     - Identificação automática de dispositivos
+     - Varredura de `/dev/input/event*`
+     - Leitura de eventos do kernel Linux
+   
+   - **main.c**:
+     - Sistema de zoom regional com cache
+     - Tratamento de entrada (mouse/teclado)
+     - Integração com API FPGA
+     - Parser de BMP nativo
+
+## 7. [Testes](#testes)
+   ### Metodologia de Validação
+   - Teste de Loopback (escrita/leitura VRAM)
+   - Sanity Check Visual (gradientes)
+   - Teste de latência de driver
+   - Teste de periféricos isolados
+   - Validação algorítmica
+   
+   ### Problemas Resolvidos
+   - Bloqueio de execução no `wait_for_enter()`
+   - Instabilidade de pixels em requisições rápidas
+
+## 8. [Menu How to](#howto)
+   - Guia de operação e uso
+   - Transferência de arquivos para a placa (SFTP)
+   - Compilação e programação no Quartus
+
+</details>
+<hr>
+
+  
+</div>
+
 <br>
 
   <h1 id="sobre">Sobre o Projeto 🔻</h1>
