@@ -414,7 +414,8 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
 <br>
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/3c82ce77-960a-49ad-b84b-8d78be2e56f7" alt="Diagrama geral do projeto" width="70%"> 
+  <img src="https://github.com/user-attachments/assets/7bd6bb95-2e72-4c05-88b3-f5b94b01ed3b" alt="Diagrama geral do projeto" width="70%"> 
+
 
   <br><sub>Figura: Diagrama geral do projeto</sub>
 </div>
