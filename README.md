@@ -206,8 +206,8 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
   <p align="justify">&emsp;Acesse o menu <em>Code</em> deste repositório e faça o download do arquivo <strong>.ZIP</strong>.</p>
   
   <div align="center">
-    <img src="https://github.com/user-attachments/assets/99d5478a-e2be-4406-8c3c-b25dafe53adf" alt="Figura 1. Local de download" width="50%"> 
-    <br><sub>Figura 1. Local exato de onde baixar o arquivo ZIP</sub>
+    <img src="https://github.com/user-attachments/assets/99d5478a-e2be-4406-8c3c-b25dafe53adf" alt="Figura: Local de download" width="50%"> 
+    <br><sub>Figura: Local exato de onde baixar o arquivo ZIP</sub>
 
   </div>
   <br>
@@ -216,7 +216,7 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
 
   <div align="center">
     <img src="https://github.com/user-attachments/assets/91857ab8-19d8-4030-ab0f-e0e8a63243b6" alt="Figura 2. Estrutura de arquivos" width="60%">
-    <br><sub>Figura 2. A pasta do projeto deve conter estes elementos</sub> 
+    <br><sub>Figura: A pasta do projeto deve conter estes elementos</sub> 
   <br>
     
   </div>
@@ -235,7 +235,7 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
 
   <div align="center">
     <img src="https://github.com/user-attachments/assets/2dfaa1b7-9378-4006-8545-4eaab9f983c1" alt="Figura 3. Arquivo soc_system.qpf" width="60%"> 
-    <br><sub>Figura 3. O arquivo soc_system.qpf aberto no Quartus</sub> 
+    <br><sub>Figura: O arquivo soc_system.qpf aberto no Quartus</sub> 
 
   </div>
 
@@ -270,7 +270,7 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
 <div align="center">
   <img src="https://github.com/user-attachments/assets/010771fb-e591-4a8b-8306-db56a35f620a" alt="Tela de Boot e Detecção de Mouse" width="600px"> 
 
-  <p><em>Figura 1: Sequência de boot e detecção automática do mouse.</em></p>
+  <p><em>Figura: Sequência de boot e detecção automática do mouse.</em></p>
 </div>
 
 <h3>2. O Painel de Controle (Dashboard)</h3>
@@ -287,7 +287,7 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
   <img src="https://github.com/user-attachments/assets/aef08e21-fe24-4285-86d3-d8648a112eb3" alt="Menu Principal Vazio" width="600px"> 
 
 
-  <p><em>Figura 2: Menu Principal mostrando o estado inicial do sistema.</em></p>
+  <p><em>Figura: Menu Principal mostrando o estado inicial do sistema.</em></p>
 </div>
 
 <h3>3. Carregando Dados (Workflow Básico)</h3>
@@ -300,7 +300,7 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/6eb12e9e-2a5a-4a13-987e-801377adc635" alt="Carregando Imagem" width="600px">
-  <p><em>Figura 3: Processo de carga de imagem e atualização de status.</em></p>
+  <p><em>Figura: Processo de carga de imagem e atualização de status.</em></p>
 </div>
 
 <h3>4. Funcionalidade Avançada: Zoom Regional Interativo</h3>
@@ -320,7 +320,7 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
 <div align="center">
   <img src="https://github.com/user-attachments/assets/7f6155fd-2199-4559-981b-ae0337478345" alt="Captura de Coordenadas" width="600px"> 
 
-  <p><em>Figura 4: Interface de captura de área mostrando as coordenadas em tempo real.</em></p>
+  <p><em>Figura: Interface de captura de área mostrando as coordenadas em tempo real.</em></p>
 </div>
 
 <h4>Passo B: Navegação e Cache simulada</h4>
@@ -336,7 +336,7 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
 <div align="center">
   <img src="https://github.com/user-attachments/assets/d4935308-df49-41f9-b10f-394e0873ef9b" alt="Menu de Navegação Regional" width="600px">  
 
-  <p><em>Figura 5: Sub-menu de navegação com status do cache visualizado.</em></p>
+  <p><em>Figura: Sub-menu de navegação com status do cache visualizado.</em></p>
 </div>
 </details>
 
@@ -377,18 +377,18 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
   <br>
 
   <h3>1. Visão Geral da Placa</h3>
-  <p align="justify">&emsp;O kit de desenvolvimento <strong><a href="https://drive.google.com/file/d/1dBaSfXi4GcrSZ0JlzRh5iixaWmq0go2j/view?usp=sharing">DE1-SoC</a></strong>, ilustrado na Figura 4, baseia-se na arquitetura <em>System-on-Chip</em> (SoC) do Intel® Cyclone® V. Este dispositivo integra, em um único chip, um <strong>Hard Processor System (HPS)</strong> e uma <strong>FPGA (Field Programmable Gate Arrays)</strong>.</p>
+  <p align="justify">&emsp;O kit de desenvolvimento <strong><a href="https://drive.google.com/file/d/1dBaSfXi4GcrSZ0JlzRh5iixaWmq0go2j/view?usp=sharing">DE1-SoC</a></strong>, ilustrado na Figura abaixo, baseia-se na arquitetura <em>System-on-Chip</em> (SoC) do Intel® Cyclone® V. Este dispositivo integra, em um único chip, um <strong>Hard Processor System (HPS)</strong> e uma <strong>FPGA (Field Programmable Gate Arrays)</strong>.</p>
   
   <p align="justify">&emsp;A placa conta com recursos robustos como memória DDR3, conexões USB e Ethernet, além de diversos periféricos, conferindo-lhe alta flexibilidade para múltiplas aplicações. A interação com o sistema operacional Linux embarcado é realizada via computador host utilizando o protocolo <strong>SSH (Secure Shell)</strong>, assegurando uma comunicação criptografada e eficiente.</p>
 
   <div align="center">
     <img src="https://github.com/user-attachments/assets/de1f754e-cd3c-4c9b-88d0-3f9380310e52" alt="Figura 4. Placa DE1-SoC" width="50%">
-    <br><sub>Figura 4. Placa utilizada para o projeto (Fonte: FPGAcademy)</sub> 
+    <br><sub>Figura: Placa utilizada para o projeto (Fonte: FPGAcademy)</sub> 
 
   </div>
 
   <h3>2. Sistema Computacional da Placa</h3>
-  <p align="justify">&emsp;O diagrama de blocos ilustrado na Figura 5 detalha a arquitetura interna e as interconexões do chip Intel® Cyclone® V. A estrutura do sistema divide-se claramente entre o HPS e a FPGA:</p>
+  <p align="justify">&emsp;O diagrama de blocos ilustrado na Figura abaixo detalha a arquitetura interna e as interconexões do chip Intel® Cyclone® V. A estrutura do sistema divide-se claramente entre o HPS e a FPGA:</p>
   
   <ul>
     <li><strong>HPS (Hard Processor System):</strong> É constituído por um processador dual-core ARM® Cortex-A9 MPCore™, memória DDR3 dedicada e periféricos. Ele executa uma distribuição Linux responsável pelo gerenciamento de alto nível e tarefas de propósito geral (software).</li>
@@ -397,7 +397,7 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
 
   <div align="center">
     <img src="https://github.com/user-attachments/assets/9223a9a9-d834-45ee-937f-578f0d781695" alt="Figura 5. Diagrama HPS vs FPGA" width="60%"> 
-    <br><sub>Figura 5. Diagrama dos componentes da arquitetura Cyclone V</sub>
+    <br><sub>Figura: Diagrama dos componentes da arquitetura Cyclone V</sub>
   </div>
   <br>
 
@@ -406,7 +406,7 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
 
   <div align="center">
     <img src="https://github.com/user-attachments/assets/bfe88c75-bd44-499b-b82f-8380cdf3f1aa" alt="Figura: Representação Lúdica" width="60%"> 
-    <br><sub>Figura 6. Representação visual da comunicação e endereçamento</sub>
+    <br><sub>Figura: Representação visual da comunicação e endereçamento</sub>
   </div>
 
 </details>
@@ -447,11 +447,11 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
 
   <div align="center">
     <img src="https://github.com/user-attachments/assets/04e349ab-7020-49cc-ade7-a932a07867c9" alt="Figura. Fluxo de dados" width="70%"> 
-    <br><sub>Figura. Diagrama do funcionamento geral</sub>
+    <br><sub>Figura: Diagrama do funcionamento geral</sub>
   </div>
    <div align="center">
     <img src="https://github.com/user-attachments/assets/ae6be45b-c3a8-4ee9-bdcf-21ff6ccabcfb" alt="Figura. Fluxo de dados" width="70%"> 
-    <br><sub>Figura. Funcionando!</sub> 
+    <br><sub>Figura: Funcionando!</sub> 
 
   </div>
 </details>
@@ -546,7 +546,7 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
   
   <div align="center">
     <img src="https://github.com/user-attachments/assets/9ab50ed8-e8fe-4440-97d5-dd39f734f204" alt="Figura. Fluxo de dados" width="50%">
-    <br><sub>Figura. Fluxo de dados geral</sub>
+    <br><sub>Figura: Fluxo de dados geral</sub>
   </div>
 
 </details>
@@ -974,7 +974,7 @@ Durante o desenvolvimento e testes de integração Hardware/Software, dois probl
 <ul>
   <li><strong> O Problema:</strong> Ao pressionar a tecla de Zoom In (<code>+</code>) repetidamente em um curto intervalo de tempo, a imagem resultante na FPGA apresentava falhas de escrita ou pixels corrompidos.</li>
   <li><strong> Causa Técnica:</strong> O barramento de comunicação com a VRAM da FPGA não utiliza <em>pipelining</em> para o fluxo de comandos de zoom. O envio de múltiplos comandos consecutivos ("spamming" de teclas) causava uma condição de corrida (<em>race condition</em>), onde uma nova operação de leitura/escrita interrompia a anterior antes de sua conclusão.</li>
-  <li><strong> Solução:</strong> Restrição operacional no fluxo de uso. O sistema requer que o usuário aguarde a conclusão visual do processamento (renderização do frame) antes de solicitar o próximo nível de zoom, garantindo a integridade dos dados na memória.</li>
+  <li><strong> Solução:</strong> Foi adicionado um delay para garantir o tempo necessário da FPGA terminar o processamento da imagem e carregar os pixels da área de interesse. Além do mais, é ideal que haja uma restrição operacional no fluxo de uso. O sistema requer que o usuário aguarde a conclusão visual do processamento (renderização do frame) antes de solicitar o próximo nível de zoom, garantindo a integridade dos dados na memória.</li>
 </ul>
   <div align="center">
   <img src="https://github.com/user-attachments/assets/2d8c0104-fc2d-4957-8d5b-72c05366a0a5"  alt="Trecho do erro"> 
