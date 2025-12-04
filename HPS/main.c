@@ -1351,6 +1351,7 @@ int main(void) {
                         case ZOOM_IN:
                         case '=':
                             regional_zoom_apply(&regional_ctx, image_data, zoom_level, ZOOM_IN);
+                            usleep(REFRESH_DELAY_US);
                             break;
                         
                         case ZOOM_OUT:

@@ -25,7 +25,6 @@
     .equ PIO_ENABLE_OFS,     0x10
     .equ PIO_FLAGS_OFS,      0x20
     .equ PIO_DATAOUT_OFS,    0x30
-    .equ PIO_MEMSELECT_OFS,  0x40
 
     @ --- INSTRUCTIONS ---
     .equ INSTR_NOP,        0
@@ -406,36 +405,6 @@ NearestNeighbor:
     BL _ASM_Set_Instruction      @ calls internal function
     POP {PC}                     @ return (no pulse, no wait)
 .size NearestNeighbor, .-NearestNeighbor
-
-@ --- ASM_SetPrimaryMemory (void) ---
-@ Define o bit SEL_MEM para 0
-.global ASM_SetPrimaryMemory
-.type ASM_SetPrimaryMemory, %function
-ASM_SetPrimaryMemory:
-    PUSH    {R0, R4, LR}
-    LDR     R4, =lw_bridge_ptr
-    LDR     R4, [R4]            
-
-    MOV     R0, #0
-    STR     R0, [R4, #PIO_MEMSELECT_OFS] @ Writes 0 to PIO_MEMSELECT
-    
-    POP     {R0, R4, PC}
-.size ASM_SetPrimaryMemory, .-ASM_SetPrimaryMemory
-
-@ --- ASM_SetSecondaryMemory (void) ---
-@ Define o bit SEL_MEM para 1
-.global ASM_SetSecondaryMemory
-.type ASM_SetSecondaryMemory, %function
-ASM_SetSecondaryMemory:
-    PUSH    {R0, R4, LR}
-    LDR     R4, =lw_bridge_ptr
-    LDR     R4, [R4]            
-
-    MOV     R0, #1
-    STR     R0, [R4, #PIO_MEMSELECT_OFS] @ Writes 1 to PIO_MEMSELECT
-    
-    POP     {R0, R4, PC}
-.size ASM_SetSecondaryMemory, .-ASM_SetSecondaryMemory
 
 @ --- PixelReplication (void) ---
 .global PixelReplication
