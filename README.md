@@ -18,7 +18,7 @@
       <br>
       <p align="justify">&emsp;O projeto consiste no desenvolvimento de um sistema embarcado para redimensionamento de imagens em tempo real, simulando aplicações de vigilância. O objetivo é integrar um controlador gráfico implementado em FPGA a uma aplicação em linguagem C através de uma API (driver) personalizada, utilizando um repertório de instruções próprio. O sistema deve carregar imagens no formato BITMAP e permitir a interação do usuário via periféricos, utilizando o mouse para selecionar regiões de interesse (janelas) e o teclado para controlar os níveis de zoom in e zoom out (teclas + e -) na janela, com o resultado processado sendo renderizado via saída VGA sobre a imagem original.</p>
 
-   <p> <a href="https://github.com/DestinyWolf/Problema-SD-2025-2"> Repositório do coprocessador original</a>, o qual usamos na FPGA. </p>
+   <p> <a href="https://github.com/DestinyWolf/Problema-SD-2025-2" target="_blank"> Repositório do coprocessador original</a>, o qual usamos na FPGA. </p>
 
    </details>
 <details>
