@@ -355,16 +355,16 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
   <h3>Linguagem Verilog</h3>
   <p align="justify">&emsp;Linguagem de descrição de hardware (HDL) criada em 1993. Foi utilizada para projetar e simular os sistemas digitais na FPGA. Sua sintaxe, similar à linguagem C, permite uma descrição concisa do comportamento dos circuitos integrados.</p>
 
-  <h3>Linguagem C</h3>
+  <h3>Linguagem C99 </h3>
   <p align="justify">&emsp;Vinda dos anos 70, a linguagem C foi escolhida por sua portabilidade, eficiência e controle de baixo nível. Ela é a base para a produção da interface de usuário e para a comunicação direta com os módulos de hardware (driver).</p>
 
   <h3>Assembly ARMv7</h3>
   <p align="justify">&emsp;Utilizada para controlar os circuitos da arquitetura ARMv7 (CPUs de 32 bits). Esta linguagem permite escrever instruções legíveis para humanos que seguem o princípio RISC (computação com conjunto reduzido de instruções), possibilitando execuções otimizadas e manipulação precisa dos registradores.</p>
 
-  <h3>Quartus Prime</h3>
+  <h3>Quartus Prime Lite Edition 23.1std</h3>
   <p align="justify">&emsp;Software oficial da Intel/Altera para desenvolvimento, compilação e planejamento da FPGA. Foi utilizado para sintetizar o hardware e carregar os códigos que descrevem o comportamento físico da placa.</p>
 
-  <h3>Visual Studio Code (VS Code)</h3>
+  <h3>Visual Studio Code version 1.106(VS Code)</h3>
   <p align="justify">&emsp;Editor de texto avançado criado pela Microsoft. Foi o ambiente principal de desenvolvimento, oferecendo suporte a depuração, destaque de sintaxe e extensões que facilitam a escrita de códigos em C e Python.</p>
 
   <h3>Compilador GNU (GCC)</h3>
