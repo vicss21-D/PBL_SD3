@@ -240,7 +240,6 @@ ASM_Store:
     LSL     R3, R0, #3          
     ORR     R5, R5, R3
 
-    @MOV     R3, #0
     @ SELECTION MEMORY BIT
     LSL     R3, R2, #20
     ORR     R5, R5, R3
@@ -262,7 +261,7 @@ ASM_Store:
     BNE     .WR_CHECK_ERROR
     SUBS    R5, R5, #1
     BNE     .WR_POLLING
-    MOV     R0, #0 @cl
+    MOV     R0, #0
     B       .WR_EXIT
 
 .WR_CHECK_ERROR:
@@ -313,7 +312,6 @@ ASM_Load:
     LSL     R3, R0, #3          
     ORR     R2, R2, R3
 
-    @MOV     R3, #0
     @ SELECTION MEMORY BIT
     LSL     R3, R1, #20
     ORR     R2, R2, R3
