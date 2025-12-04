@@ -107,7 +107,7 @@ Este read.me detalha a arquitetura da solução desta etapa do projeto. Desenvol
 </details>
   
   <details>
-    <summary><strong>Detalhamento dos periféricos utilizados utilizados</strong></summary> <br>
+    <summary><strong>Detalhamento dos periféricos utilizados no desenvolvimento do projeto</strong></summary> <br>
     <h3>1. Mouse</h3>
 <ul>
   <li><strong>Marca:</strong> Dell.</li>
@@ -175,7 +175,7 @@ O algoritmo que descreve a leitura do teclado está na main.c, melhor explicado 
 </div>
 
 <p align="justify"><strong>Como foi reconhecido pela placa?</strong><br>
-A saída VGA e a integração com a GPU são as responsáveis por essa implementação, especificamente no <code>vga_module.v</code>, o qual você pode visualizar <a href="https://github.com/vicss21-D/PBL_SD3/blob/main/FPGA/aux_files/vga_module.v">aqui</a>.</p>
+A saída VGA e a integração com a GPU são as responsáveis por essa implementação, especificamente no <code>vga_module.v</code>, o qual você pode visualizar <a href="https://github.com/vicss21-D/PBL-SD2/tree/main/FPGA">aqui</a>.</p>
     
   </details>
 
