@@ -1,10 +1,10 @@
 /*
  * =========================================================================
- * mouse_utils.h: Mouse Input Utilities Header
+ * mouse_utils.h: Header de utilitários do mouse
  * =========================================================================
  *
- * Provides mouse device detection, opening, and event processing
- * for Linux input subsystem (/dev/input/eventX)
+ * Faz detecção leitura e processamento de eventos pro sistema de input do Linux
+ * a partir de dispositivos de mouse.
  *
  */
 
@@ -15,17 +15,17 @@
 #include <stdint.h>
 
 /* ===================================================================
- * BIT MANIPULATION MACROS
+ * Macros de bits para manipulação 
  * =================================================================== */
 #define NBITS(x) ((((x) - 1) / (sizeof(long) * 8)) + 1)
 #define test_bit(bit, array) ((array[(bit) / (sizeof(long) * 8)] >> ((bit) % (sizeof(long) * 8))) & 1)
 
 /* ===================================================================
- * DATA STRUCTURES
+ * Estruturas de Dados
  * =================================================================== */
 
 /**
- * @brief Virtual cursor position
+ * @brief Posição do cursor
  */
 typedef struct {
     int x;
@@ -33,7 +33,7 @@ typedef struct {
 } Cursor;
 
 /**
- * @brief Mouse event with cursor position
+ * @brief Evento do mouse com posição do cursor
  */
 typedef struct {
     uint16_t event_type;   // Event type (EV_REL, EV_KEY, etc.)
@@ -43,30 +43,30 @@ typedef struct {
 } MouseEvent;
 
 /* ===================================================================
- * FUNCTION PROTOTYPES
+ * Protótipos das Funções
  * =================================================================== */
 
 /**
- * @brief Checks if a device file descriptor is a mouse
- * @param fd File descriptor of the device
- * @return 1 if device is a mouse, 0 otherwise
+ * @brief Verifica se o dispositivo associado ao fd é um mouse
+ * @param fd File descriptor do dispositivo
+ * @return 1 se for mouse, 0 caso contrário
  */
 int is_mouse(int fd);
 
 /**
- * @brief Finds and opens the first available mouse device
- * @param device_path_out Output buffer for device path (size >= 256)
- * @param name_out Output buffer for device name (size >= 256)
- * @return File descriptor on success, -1 on failure
+ * @brief Encontra e abre o dispositivo de mouse
+ * @param device_path_out Buffer de saída para o caminho do dispositivo (size >= 256)
+ * @param name_out Buffer de saída para o nome do dispositivo (size >= 256)
+ * @return File descriptor do mouse aberto, ou -1 se falhar
  */
 int find_and_open_mouse(char *device_path_out, char *name_out);
 
 /**
- * @brief Reads and processes a mouse event
- * @param mouse_fd Mouse device file descriptor
- * @param current_cursor Pointer to current cursor state (updated by function)
- * @param event_out Output structure for event data
- * @return 1 on success, 0 on EOF, -1 on error
+ * @brief Lê e processa um evento do mouse
+ * @param mouse_fd File descriptor do mouse
+ * @param current_cursor Ponteiro para a posição atual do cursor
+ * @param event_out Ponteiro para a estrutura de saída do evento
+ * @return 1 se um evento foi lido e processado, 0 para EOF, -1 em caso de erro
  */
 int read_and_process_mouse_event(int mouse_fd, Cursor *current_cursor, MouseEvent *event_out);
 

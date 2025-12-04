@@ -15,7 +15,6 @@
 // Tamanho máximo do buffer de caminho/nome
 #define MAX_PATH_LEN 256
 
-// Macros de bits removidas daqui, pois já estão em mouse_utils.h
 
 /*
  * --- FUNÇÕES DE UTILITY DE DISPOSITIVO (is_mouse) ---
@@ -26,7 +25,7 @@ int is_mouse(int fd) {
     unsigned long relbit[NBITS(REL_MAX)];
     unsigned long keybit[NBITS(KEY_MAX)];
 
-    // is_keyboard removida, conforme refatoração anterior
+    
     // ioctl é a função que usa o fd (descritor de arquivo) para consultar o hardware
     if (ioctl(fd, EVIOCGBIT(EV_REL, sizeof(relbit)), relbit) < 0) return 0;
     if (ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keybit)), keybit) < 0) return 0;
@@ -47,7 +46,6 @@ int find_and_open_mouse(char *device_path_out, char *name_out) {
     
     printf("Varrendo dispositivos em /dev/input/...\n");
 
-    // O último NULL substitui o 'alphasort' conforme solicitado
     n = scandir("/dev/input", &namelist, NULL, NULL); 
     if (n < 0) {
         perror("scandir");
@@ -69,7 +67,7 @@ int find_and_open_mouse(char *device_path_out, char *name_out) {
                     if (mouse_fd == -1) {
                         mouse_fd = fd; // Mantém aberto para retorno
                         
-                        // Armazena as informações para o programa chamador
+                        // Armazena as informações para o programa que está chamando
                         strncpy(device_path_out, filename, MAX_PATH_LEN);
                         strncpy(name_out, name, MAX_PATH_LEN);
 
@@ -141,6 +139,6 @@ int read_and_process_mouse_event(int mouse_fd, Cursor *current_cursor, MouseEven
     // Copia a posição atualizada para a saída
     event_out->cursor_pos = *current_cursor;
 
-    // Retorna 1 para indicar que um evento foi lido e processado
+    // Retorna 1 para indicar que um evento foi lido e processado certinho
     return 1;
 }

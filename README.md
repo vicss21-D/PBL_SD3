@@ -24,7 +24,8 @@
 <details>
    <summary><strong>Introdução</strong></summary>
   <br>
-  <p align="justify">&emsp;O foco deste trabalho (Etapa 3) foi a criação da infraestrutura de software necessária para tornar o coprocessador FPGA interativo e mais completo, com o zoom em modo janela (picture in picture). Desenvolvemos módulos em C, os quais reconhecem os dispositivos de E/S, reconhecem os eventos de cada dispositivo (clicar com o botão direito do mouse, por exemplo), seleciona a janela através de uma interface em C que informa as coordenadas do mouse e aplica o Zoom in/out. Apesar de não haver quaisquer mudanças no código do coprocessador <a href="https://github.com/DestinyWolf/Problema-SD-2025-2">(link aqui)</a>, nosso projeto implementa uma série de algorítmos e funções que executam todas as ações propostas pelo problema.
+  <p align="justify">&emsp;O foco deste trabalho (Etapa 3) foi a criação da infraestrutura de software necessária para tornar o coprocessador FPGA interativo e mais completo, com o zoom em modo janela (picture in picture). Desenvolvemos módulos em C, os quais reconhecem os dispositivos de E/S, reconhecem os eventos de cada dispositivo (clicar com o botão direito do mouse, por exemplo), seleciona a janela através de uma interface em C que informa as coordenadas do mouse e aplica o Zoom in/out. Para o desenvolvimento eficiente dessa etapa do projeto, foi utilizado um coprocessador já existente <a href="https://github.com/DestinyWolf/Problema-SD-2025-2">(link)</a>, mas aqui houveram alteraçoes no barramento de saida dos dados da imagem fpga-hps, e na forma que o tratamento do sinal selection memory é feito. Acesse nosso coprocessador alterado <a href="https://github.com/vicss21-D/PBL-SD2">aqui</a>
+ .Nosso projeto implementa uma série de algorítmos e funções que executam todas as ações propostas pelo problema.
 Este read.me detalha a arquitetura da solução desta etapa do projeto. Desenvolvedores interessados em sistemas embarcados críticos encontrarão no link a seguir maiores detalhes sobre a implementação sólida e modular das etapas anteriores desse projeto.</p>
 
 <a href="https://docs.kernel.org/input/index.html](https://github.com/vicss21-D/PBL-SD2">Etapa 2</a> <br>
@@ -65,7 +66,9 @@ Este read.me detalha a arquitetura da solução desta etapa do projeto. Desenvol
     <a href="https://stackoverflow.com/questions/16695432/input-event-structure-description-from-linux-input-h?noredirect=1&lq=1"> struct input_event structure (stack overflow)</a><br>
     <a href="https://www.arquivodecodigos.com.br/visualizar_dica.php?dica=2921-c-obtendo-as-coordenadas-do-mouse-durante-um-evento-mouseup-mousedown-mousemove-mousehover-ou-mouseclick.html">Obtendo as coordenadas do mouse durante um evento</a> <br>
     <a href="https://docs.kernel.org/input/index.html"> Input Documentation</a> <br>
-    
+    <a href="https://abracloud.com.br/computacao-heterogenea-futuro-processamento-dados/"> Computação heterogênea</a> <br>
+    <a href="https://www.bing.com/ck/a?!&&p=3211db47cb642146d7c9e5088d667dc052a50c31eef7d9b772b636cabf565ce8JmltdHM9MTc2NDcyMDAwMA&ptn=3&ver=2&hsh=4&fclid=0d258bc0-949a-6726-24bc-98a795bf66bd&psq=protocolo+AXI&u=a1aHR0cHM6Ly9kb2N1bWVudGF0aW9uLXNlcnZpY2UuYXJtLmNvbS9zdGF0aWMvNjhiMDNiZWIwMWFlOTUyZDk1NTlmOWVi"> Protocolo AXI <br>
+    <a href="https://drive.google.com/file/d/1dBaSfXi4GcrSZ0JlzRh5iixaWmq0go2j/view?usp=sharing"> Manual do Kit de desenvolvimento DE1-SoC</a> <br>
   
   </details>
 
@@ -185,16 +188,18 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
   <h3>1. Requisitos Prévios</h3>
   <p align="justify">&emsp;Para a execução correta do projeto, certifique-se de que o ambiente atenda aos seguintes requisitos:</p>
   <ul>
-    <li>Possuir conexão com a internet.</li>
+    <li>Possuir conexão com a internet e ter a placa e o PC conectados na mesma rede (use o cabo de rede).</li>
     <li>Possuir o <strong>Git</strong> e o compilador <strong>GCC</strong> instalados.</li>
     <li>Utilizar uma placa de desenvolvimento <strong>DE1-SoC</strong>.</li>
-    <li>Ter o coprocessador gráfico carregado na FPGA (<a href="https://github.com/DestinyWolf/Problema-SD-2025-2">Link do Repositório Oficial</a>).</li>
+    <li>Ter o coprocessador gráfico carregado na FPGA (<a href="https://github.com/DestinyWolf/Problema-SD-2025-2](https://github.com/vicss21-D/PBL-SD2">Link do Repositório</a>).</li>
     <li><strong>Monitor VGA:</strong> Para exibir o processamento de vídeo.</li>
+    <li><strong>Mouse USB:</strong> Deve estar conectado à entrada USB da placa para interação.</li>
+    <br>
     <div align="center">
       <img src="https://github.com/user-attachments/assets/dd4688db-df4d-4edd-bc38-48bac4c00fca" alt="Conexão VGA" width="30%">
       <br><sub>Exemplo de conexão VGA na placa</sub>
     </div>
-    <li><strong>Mouse USB:</strong> Deve estar conectado à entrada USB da placa para interação.</li>
+    
   </ul>
 
   <h3>2. Instalação do Projeto</h3>
@@ -207,7 +212,7 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
   </div>
   <br>
 
-  <p align="justify">&emsp;Crie uma pasta específica para o projeto e extraia os arquivos. <strong>Nota:</strong> Esta estrutura de pastas deve ser enviada para dentro do sistema de arquivos da placa (via <em>SCP</em> ou <em>SFTP</em>).</p>
+  <p align="justify">&emsp;Crie uma pasta específica para o projeto e extraia os arquivos. <strong>Nota:</strong> Esta estrutura de pastas deve ser enviada para dentro do sistema de arquivos da placa (via <em>SFTP</em>).</p>
 
   <div align="center">
     <img src="https://github.com/user-attachments/assets/91857ab8-19d8-4030-ab0f-e0e8a63243b6" alt="Figura 2. Estrutura de arquivos" width="60%">
@@ -215,13 +220,14 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
   </div>
   
   <p align="center">
-    <a href="https://github.com/vicss21-D/PBL-SD2#user-content-3-manuais-e-resultados">Consulte aqui os Manuais e Resultados</a>
+    <a href="https://github.com/vicss21-D/PBL-SD2#user-content-3-manuais-e-resultados">Como enviar meus arquivos dentro do sistema de arquivos da placa?</a>
   </p>
 
   <h3>3. Compilação e Execução</h3>
   
   <h4>No lado da FPGA (Hardware):</h4>
   <p align="justify">&emsp;Acesse a pasta <code>FPGA</code> e compile o código utilizando o <strong>Quartus II</strong>. O arquivo <code>soc_system.qpf</code> é a base do projeto e deve ser sintetizado para gerar o bitstream <code>.sof</code>.</p>
+  <a href="#GuiaQuartus">Como compilar no quartus e colocar o código na placa?</a>
   
 
   <div align="center">
@@ -232,6 +238,7 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
 
   <h4>No lado do HPS (Software):</h4>
   <p align="justify">&emsp;Acesse o terminal da placa (via Serial ou SSH). Navegue até a pasta onde os arquivos do HPS foram salvos. Como o driver manipula memória física, é necessário privilégio de superusuário:</p>
+  <a href="https://github.com/vicss21-D/PBL-SD2#user-content-3-manuais-e-resultados">Como acessar a placa via terminal?</a>
   
   <pre>
   sudo su
@@ -243,7 +250,7 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
 </details> 
 <br>
 
-<h1 id="softwares">Softwares e Tecnologias Utilizadas 🔻</h1>
+<h1 id="softwares">Softwares e Tecnologias Utilizados 🔻</h1>
 <br>
 <details>
   <summary><strong>Ferramentas de Desenvolvimento</strong></summary>
@@ -273,14 +280,12 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
   <p align="justify">&emsp;Editor de texto em linha de comando presente no Linux embarcado do kit DE1-SoC (versão 2.2.6). Foi utilizado para edições rápidas de scripts e ajustes no código diretamente na placa, oferecendo uma interface leve e intuitiva.</p>
 
 </details>
-<h1 id="de1soc">Kit de Desenvolvimento DE1-SoC 🔻</h1>
-<br>
 <details>
-  <summary><strong>Visão Geral e Arquitetura</strong></summary>
+  <summary><strong>Visão Geral da placa</strong></summary>
   <br>
 
   <h3>1. Visão Geral da Placa</h3>
-  <p align="justify">&emsp;O kit de desenvolvimento <strong>DE1-SoC</strong>, ilustrado na Figura 4, baseia-se na arquitetura <em>System-on-Chip</em> (SoC) do Intel® Cyclone® V. Este dispositivo integra, em um único chip, um <strong>Hard Processor System (HPS)</strong> e uma <strong>FPGA (Field Programmable Gate Arrays)</strong>.</p>
+  <p align="justify">&emsp;O kit de desenvolvimento <strong><a href="https://drive.google.com/file/d/1dBaSfXi4GcrSZ0JlzRh5iixaWmq0go2j/view?usp=sharing">DE1-SoC</a></strong>, ilustrado na Figura 4, baseia-se na arquitetura <em>System-on-Chip</em> (SoC) do Intel® Cyclone® V. Este dispositivo integra, em um único chip, um <strong>Hard Processor System (HPS)</strong> e uma <strong>FPGA (Field Programmable Gate Arrays)</strong>.</p>
   
   <p align="justify">&emsp;A placa conta com recursos robustos como memória DDR3, conexões USB e Ethernet, além de diversos periféricos, conferindo-lhe alta flexibilidade para múltiplas aplicações. A interação com o sistema operacional Linux embarcado é realizada via computador host utilizando o protocolo <strong>SSH (Secure Shell)</strong>, assegurando uma comunicação criptografada e eficiente.</p>
 
@@ -308,18 +313,20 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
   <p align="justify">&emsp;A integração entre esses dois domínios ocorre de forma bidirecional através das chamadas <strong>FPGA Bridges</strong>. No fluxo do HPS para a FPGA, o processador consegue acessar todos os dispositivos de Entrada/Saída (E/S) conectados à lógica programável utilizando a técnica de <strong>mapeamento de memória</strong>. Os detalhes específicos sobre o endereçamento desses periféricos podem ser consultados na documentação técnica da placa.</p>
 
   <div align="center">
-    <img src="https://github.com/user-attachments/assets/bfe88c75-bd44-499b-b82f-8380cdf3f1aa" alt="Figura 6. Representação Lúdica" width="60%"> 
+    <img src="https://github.com/user-attachments/assets/bfe88c75-bd44-499b-b82f-8380cdf3f1aa" alt="Figura: Representação Lúdica" width="60%"> 
     <br><sub>Figura 6. Representação visual da comunicação e endereçamento</sub>
   </div>
 
 </details>
-<h1 id="processador">O Processador Gráfico 🔻</h1>
+<h1 id="processador">Menu Arquitetura🔻</h1>
 <br>
 
-<details>
-  <summary><strong>Visão Geral e Arquitetura</strong></summary>
-  <br>
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/3c82ce77-960a-49ad-b84b-8d78be2e56f7" alt="Diagrama geral do projeto" width="70%"> 
 
+  <br><sub>Figura: Diagrama geral do projeto</sub>
+</div>
+  
   <h3>Visão Geral</h3>
   <p align="justify">&emsp;O projeto adota uma arquitetura de Co-design Hardware/Software, tirando proveito da estrutura do SoC (System on Chip) da placa DE1-SoC. O sistema é dividido em duas camadas principais que se comunicam através de uma ponte de barramento de alta velocidade (Lightweight HPS-to-FPGA AXI Bridge). As camadas são HPS (códigos em C e assembly) e FPGA (códigos em verilog). Nessa etapa do projeto, falaremos mais sobre o HPS, para maiores detalhes da FPGA (códigos do hardware), <a href="https://github.com/vicss21-D/PBL_SD3/tree/main/FPGA">acesse esse read.me aqui</a>.</p>
 
@@ -332,170 +339,184 @@ A saída VGA e a integração com a GPU são as responsáveis por essa implement
     <li><strong>Camada de Driver (Assembly):</strong> É o "tradutor". Atua como uma API que abstrai a complexidade do hardware. Ela converte chamadas de função (como ASM_Store ou PixelReplication) em operações de escrita e leitura em endereços físicos de memória mapeados.</li>
     <li><strong>Camada de Hardware (FPGA):</strong> É o "músculo". Um circuito digital customizado que possui sua própria memória de vídeo (VRAM) e é composto pelas instruções em verilog. Aqui estão os ajustes de clock, PIO’s e memória, <a href="https://github.com/DestinyWolf/Problema-SD-2025-2">entenda mais aqui</a>.</li>
   </ul>
-</details>
-
-<details>
-  <summary><strong>Comunicação e Mapa de Instruções</strong></summary>
-  <br>
-
-  <h3>Comunicação HPS-FPGA (Memory Mapped I/O)</h3>
-  <p align="justify">&emsp;Para maximizar a eficiência do barramento AXI Lightweight e garantir a atomicidade das operações, o sistema utiliza uma arquitetura de Bit-Packing (Empacotamento de Bits). Ao invés de realizar múltiplas escritas em registradores PIO separados (o que aumentaria a latência do barramento), todas as informações necessárias para uma operação são encapsuladas em uma única palavra de instrução de 29 bits.</p>
-  <p align="justify">&emsp;Esta abordagem elimina problemas de sincronização, garantindo que o Endereço, o Dado e a Seleção de Memória cheguem ao núcleo de processamento no mesmo ciclo de clock.</p>
-
   
 
-  <h3>Mapa de Bits (Instruction Map)</h3>
-  <p align="justify">&emsp;O registrador de instrução (instruction[28:0]) é estruturado da seguinte forma:</p>
-
-  <div align="center">
-    <table border="1">
-      <thead>
-        <tr>
-          <th align="center">Bits</th>
-          <th align="center">Nome do Campo</th>
-          <th align="center">Tamanho</th>
-          <th align="center">Descrição Funcional</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td align="center">[2:0]</td>
-          <td align="center"><strong>OPCODE</strong></td>
-          <td align="center">3 bits</td>
-          <td>Código da operação (0 a 7). Define a ação a ser executada.</td>
-        </tr>
-        <tr>
-          <td align="center">[19:3]</td>
-          <td align="center"><strong>MEM_ADDR</strong></td>
-          <td align="center">17 bits</td>
-          <td>Endereço linear do pixel alvo ($0$ a $76.799$). Suficiente para mapear toda a resolução 320x240.</td>
-        </tr>
-        <tr>
-          <td align="center">[20]</td>
-          <td align="center"><strong>SEL_MEM</strong></td>
-          <td align="center">1 bit</td>
-          <td>Seleção de Banco de Memória (Double Buffering).<br>0: Memória Primária.<br>1: Memória Secundária.</td>
-        </tr>
-        <tr>
-          <td align="center">[28:21]</td>
-          <td align="center"><strong>DATA_IN</strong></td>
-          <td align="center">8 bits</td>
-          <td>Valor de intensidade do pixel (escala de cinza 0-255). Utilizado apenas em operações de escrita (STORE).</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <br>
-
-  <h3>Decodificação e Segurança de Hardware</h3>
-  <p align="justify">&emsp;A camada de topo (top_level.v) implementa uma lógica de decodificação segura antes de repassar os sinais ao núcleo (main.v). Utilizando multiplexadores, o hardware filtra sinais irrelevantes para o opcode atual, prevenindo comportamentos indefinidos e otimizando o consumo de energia.</p>
-  <p align="justify">&emsp;A lógica implementada no hardware segue as regras abaixo:</p>
-  <ul>
-    <li><strong>Filtro de Dados:</strong> O barramento data_in só é alimentado se a operação for STORE (3'b010). Caso contrário, é forçado a 0.</li>
-    <li><strong>Filtro de Endereço:</strong> O barramento mem_addr só é atualizado se a operação for LOAD (3'b001) ou STORE (3'b010). Para algoritmos de processamento, o endereço é zerado.</li>
-    <li><strong>Extração de Opcode:</strong> Os 3 bits menos significativos são roteados diretamente para o controlador de estados.</li>
-  </ul>
-
-  <p><strong>Snippet da Implementação em Verilog:</strong></p>
-  <pre lang="verilog">
-// Decodificação com proteção de sinais (Safety Muxes)
-wire [2:0]  opcode   = instruction[2:0];
-
-// Garante que DATA_IN seja 0 em instruções diferentes de STORE
-wire [7:0]  data_in  = (opcode == 3'b010) ? instruction[28:21] : 8'h00; 
-
-// Garante que MEM_ADDR seja 0 em instruções diferentes de LOAD e STORE
-wire [16:0] mem_addr = (opcode == 3'b010 || opcode == 3'b001) ? instruction[19:3] : 17'h00; 
-
-// Extrai o bit de seleção de memória do pacote
-wire        sel_mem  = (opcode == 3'b010 || opcode == 3'b001) ? instruction[20] : 1'h0;</pre>
-
-  <h3>Mapeamento de Flags</h3>
-  <p align="justify">&emsp;O retorno de status do hardware para o software é feito através de um vetor de 4 bits (flags[3:0]), mapeado da seguinte maneira:</p>
-  <ul>
-    <li>Bit 0: <strong>FLAG_DONE</strong> - Operação concluída (Hardware ocioso).</li>
-    <li>Bit 1: <strong>FLAG_ERROR</strong> - Erro de execução ou acesso indevido.</li>
-    <li>Bit 2: <strong>FLAG_ZOOM_MAX</strong> - Limite superior de zoom atingido.</li>
-    <li>Bit 3: <strong>FLAG_ZOOM_MIN</strong> - Limite inferior (imagem original) atingido.</li>
-  </ul>
-</details>
-
-<details>
-  <summary><strong>Fluxo de Processamento de Dados</strong></summary>
-  <br>
-
-  
-
-  <p align="justify">&emsp;O ciclo de vida de uma operação de zoom no sistema segue um fluxo híbrido sofisticado, onde o processador (HPS) gerencia o contexto da imagem e a FPGA realiza a interpolação matemática. O processo para aplicar um zoom em janela (Picture-in-Picture) ocorre nas seguintes etapas:</p>
-
-  <h3>1. Carregamento e Pré-processamento:</h3>
-  <ul>
-    <li>O software lê o arquivo .bmp do sistema de arquivos.</li>
-    <li>A imagem completa é enviada inicialmente para a VRAM da FPGA para exibição.</li>
-  </ul>
-
-  <h3>2. Definição de Janela (Interação):</h3>
-  <ul>
-    <li>O usuário interage com o mouse (via driver /dev/input/mice).</li>
-    <li>O software captura dois eventos de clique (botão esquerdo e direito) para calcular as coordenadas $(x, y)$ e as dimensões $(largura, altura)$ da Região de Interesse (ROI).</li>
-  </ul>
-
-  <h3>3. Gestão de Contexto (Pilha de Estados):</h3>
-  <p align="justify">&emsp;Antes de qualquer modificação visual, o software realiza a preservação do estado atual:</p>
-  <ul>
-    <li><strong>Snapshot (Backup):</strong> O HPS lê a VRAM e salva o "background" completo em um buffer temporário.</li>
-    <li><strong>Versionamento:</strong> O estado atual da janela (os pixels originais da região selecionada) é salvo em uma Pilha de Buffers na RAM, indexada pelo nível de zoom atual. Isso cria um "ponto de restauração".</li>
-  </ul>
-
-  <h3>4. Execução da Operação (Bifurcação):</h3>
-  
-  <h4>Caso A: Zoom In (Aceleração por Hardware)</h4>
-  <ul>
-    <li><strong>Isolamento:</strong> O software envia apenas a região selecionada (ROI) para a memória da FPGA.</li>
-    <li><strong>Processamento:</strong> O driver configura o Opcode (ex: NearestNeighbor) e envia o sinal de ENABLE. O hardware assume o controle, calcula a interpolação e escreve o resultado na memória secundária.</li>
-    <li><strong>Leitura:</strong> Após o sinal FLAG_DONE, a imagem ampliada é lida da FPGA de volta para a RAM.</li>
-  </ul>
-
-  <h4>Caso B: Zoom Out (Restauração via Software)</h4>
-  <ul>
-    <li><strong>Recuperação:</strong> O sistema identifica que é uma operação de retorno e não aciona o hardware de cálculo.</li>
-    <li><strong>Pop da Pilha:</strong> O software acessa a pilha de buffers e recupera a imagem salva no nível anterior ($N-1$).</li>
-    <li><strong>Latência Zero:</strong> Os dados originais são preparados para serem reescritos, garantindo que a imagem volte ao estado exato anterior sem perdas de interpolação reversa.</li>
-  </ul>
-
-  <h3>5. Sincronização e Composição (Overlay):</h3>
-  <p align="justify">&emsp;Independentemente do caminho tomado (Cálculo ou Restauração), o passo final é a montagem da tela:</p>
-  <ul>
-    <li><strong>Restauração do Fundo:</strong> O software reescreve o "background" original (salvo no passo 3) na VRAM da FPGA para limpar a área.</li>
-    <li><strong>Overlay:</strong> Por fim, o software escreve a imagem resultante (vinda do Hardware no Zoom In, ou da Pilha no Zoom Out) sobre o background nas coordenadas corretas, criando o efeito de janela flutuante</li>
-  </ul>
-
-</details>
-<br>
-<details>
-  <summary><strong>Como Funciona? (Arquitetura Detalhada)</strong></summary>
-  <br>
-
-  <p align="justify">&emsp;A arquitetura do sistema fundamenta-se no paradigma de <strong>Computação Heterogênea</strong> em um <em>System-on-Chip</em> (SoC), onde o fluxo de controle é particionado entre um processador de propósito geral (ARM Cortex-A9) e um núcleo de propriedade intelectual (IP Core) customizado na FPGA. A implementação do Zoom Regional opera através de um mecanismo de <strong>Co-design Hardware/Software</strong> que otimiza o <em>trade-off</em> entre latência de processamento e uso de memória.</p>
+  <h3>Como Funciona?</strong></h3>
+  <p align="justify">&emsp;A arquitetura do sistema fundamenta-se no paradigma de <strong>Computação Heterogênea</strong> <a href="https://abracloud.com.br/computacao-heterogenea-futuro-processamento-dados/">(veja mais sobre aqui)</a> em um <em>System-on-Chip</em> (SoC), onde o fluxo de controle é particionado entre um processador de propósito geral (ARM Cortex-A9) e um núcleo de propriedade intelectual (IP Core) customizado na FPGA. A implementação do Zoom Regional opera através de um mecanismo de <strong>Co-design Hardware/Software</strong> que otimiza o <em>trade-off</em> entre latência de processamento e uso de memória.</p>
 
   <h3>Fluxo de Zoom In (Hardware e Comunicação)</h3>
-  <p align="justify">&emsp;No domínio do software (Host), o gerenciamento de contexto utiliza uma estrutura de dados do tipo <strong>Pilha (LIFO - Last In, First Out)</strong> alocada na SDRAM para preservar os estados de buffer anteriores (snapshots da Região de Interesse - ROI). Durante a operação de Zoom In, o sistema realiza o processamento da ROI transferindo os dados através da ponte <strong>Lightweight HPS-to-FPGA AXI</strong>, utilizando mapeamento de I/O (MMIO) sobre controladores PIO (Parallel I/O).</p> 
-  
-  <p align="justify">&emsp;A comunicação ocorre de forma síncrona e sequencial, onde o processador escreve os dados pixel a pixel diretamente no barramento, sem o uso de acesso direto à memória (DMA). O hardware dedicado recebe esse fluxo de dados e aplica o algoritmo de <strong>Nearest Neighbor</strong> (Vizinho Mais Próximo) ponto a ponto, armazenando o resultado na memória interna enquanto o processador aguarda a finalização em estado de <em>polling</em> nos registradores de status.</p>
+ <p align="justify">&emsp;No domínio do software (Host), o gerenciamento de contexto utiliza uma estrutura de dados do tipo <strong>Pilha (LIFO - Last In, First Out)</strong> alocada na SDRAM para preservar os estados de buffer anteriores. Durante a operação de Zoom In, o sistema processa a imagem completa, extraindo e salvando no buffer apenas os pixels correspondentes à Região de Interesse (ROI). Em seguida, transfere esses dados através da ponte <strong>Lightweight HPS-to-FPGA <a href="https://www.bing.com/ck/a?!&&p=3211db47cb642146d7c9e5088d667dc052a50c31eef7d9b772b636cabf565ce8JmltdHM9MTc2NDcyMDAwMA&ptn=3&ver=2&hsh=4&fclid=0d258bc0-949a-6726-24bc-98a795bf66bd&psq=protocolo+AXI&u=a1aHR0cHM6Ly9kb2N1bWVudGF0aW9uLXNlcnZpY2UuYXJtLmNvbS9zdGF0aWMvNjhiMDNiZWIwMWFlOTUyZDk1NTlmOWVi">AXI</a></strong>, utilizando mapeamento de I/O (MMIO) sobre controladores PIO (Parallel I/O).</p>
 
+<p align="justify">&emsp;A comunicação ocorre de forma síncrona e sequencial, onde o processador escreve os dados pixel a pixel diretamente no barramento, sem o uso de acesso direto à memória (DMA). O hardware dedicado recebe esse fluxo de dados e aplica o algoritmo de <strong>Nearest Neighbor</strong> (Vizinho Mais Próximo) ponto a ponto, armazenando o resultado na memória interna enquanto o processador aguarda a finalização em estado de <em>polling</em> nos registradores de status.</p>
   <h3>Fluxo de Zoom Out (Recuperação e Overlay)</h3>
   <p align="justify">&emsp;Em contrapartida, a operação de Zoom Out elimina a necessidade de recálculo aritmético reverso (que degradaria a qualidade do sinal devido a perdas de amostragem) adotando uma abordagem de <strong>Recuperação de Estado</strong>. O processador executa um <em>pop</em> na pilha de buffers, restaurando os dados armazenados na memória principal.</p>
 
   <p align="justify">&emsp;A composição final da imagem utiliza uma técnica de <strong>Overlay por Software</strong>, onde o frame buffer é manipulado através de operações de <em>Read-Modify-Write</em>: o background original é restaurado e a janela processada (ou recuperada) é escrita nas coordenadas de destino, garantindo integridade visual sem a necessidade de um controlador de vídeo com suporte nativo a camadas de hardware (hardware layers).</p>
 
   <div align="center">
-    <img src="https://github.com/user-attachments/assets/04e349ab-7020-49cc-ade7-a932a07867c9" alt="Figura X. Diagrama do funcionamento geral" width="80%"> 
-    <br><sub>Figura X. Diagrama do funcionamento geral</sub>
+    <img src="https://github.com/user-attachments/assets/04e349ab-7020-49cc-ade7-a932a07867c9" alt="Figura. Fluxo de dados" width="70%"> 
+    <br><sub>Figura. Diagrama do funcionamento geral</sub>
+  </div>
+<details>
+  <br>
+  
+  <div align="center">
+  <img src="https://github.com/user-attachments/assets/17ae857a-1705-41ce-98bb-1a2531e141f3" width="70%" />
+    
+  <br><sub>Figura: Diagrama da arquitetura C </sub>
+  </div>
+  <summary><strong>Aquitetura do C</strong></summary>
+      <p>
+    O código atua como uma aplicação de console em <strong>Linux (User Space)</strong> que gerencia o fluxo de dados de imagem. Ele não processa a imagem matematicamente (tarefa delegada à FPGA), mas atua como um orquestrador de estado e memória.
+  </p>
+  
+  <h4>1. Estruturas de Dados Principais</h4>
+  <p>
+    A estrutura central do sistema é a <code>RegionalZoomContext</code>. Ela eleva o código de um simples despachante para um gerenciador de estado robusto.
+  </p>
+  <ul>
+    <li><strong><code>RegionalZoomContext</code>:</strong>
+      <ul>
+        <li>Armazena coordenadas da janela (<code>x, y, width, height</code>).</li>
+        <li>Mantém um <strong>Cache de Software</strong> (<code>zoom_buffers[]</code>): Uma pilha de arrays que guarda o resultado de cada nível de zoom, evitando reprocessamento em navegações "in/out".</li>
+        <li>Guarda o <strong>Background</strong> (<code>original_full_image</code>): Cópia da imagem original, essencial para restaurar o fundo ao mover a janela de zoom.</li>
+      </ul>
+    </li>
+  </ul>
+  
+  <h4>2. Manipulação de Arquivos e Memória (BMP)</h4>
+  <p> Implementação de um parser manual (<code>load_bmp</code>) sem dependências externas:</p>
+  <ul>
+    <li><strong>Leitura Binária:</strong> Processa os cabeçalhos <code>BMPHeader</code> e <code>BMPInfoHeader</code> byte a byte.</li>
+    <li><strong>Conversão de Cores:</strong> Converte RGB para Grayscale usando a fórmula de luminância: <code>(299*R + 587*G + 114*B) / 1000</code>.</li>
+    <li><strong>Alinhamento:</strong> Trata o <em>padding</em> de 4 bytes típico de arquivos BMP para evitar distorções na memória.</li>
+  </ul>
+  
+  <h4>3. Camada de Abstração de Hardware (HAL Simulada)</h4>
+  <p>Encapsula chamadas de baixo nível em funções C de alto nível:</p>
+  <ul>
+    <li><code>send_image_to_fpga</code>: Itera sobre o array de pixels e chama <code>ASM_Store</code>, incluindo contagem de erros de escrita.</li>
+    <li><code>read_fpga_window</code>: Lê uma região da memória do dispositivo, selecionando automaticamente o banco de memória (<code>mem_sel</code>) baseado no contexto.</li>
+    <li><code>execute_algorithm</code>: Implementa o padrão de <strong>Polling</strong>:
+      <ol>
+        <li>Dispara o hardware.</li>
+        <li>Aguarda a flag <code>ASM_Get_Flag_Done</code> em loop.</li>
+        <li>Aplica um <em>Timeout</em> de segurança.</li>
+      </ol>
+    </li>
+  </ul>
+  
+  <h4>4. Lógica do "Zoom Regional"</h4>
+  <p>A função <code>regional_zoom_apply</code> atua como uma máquina de estados para o sistema de janelas:</p>
+  <ol>
+    <li><strong>Verificação de Cache:</strong> Checa se o nível de zoom existe em <code>zoom_buffers</code>.</li>
+    <li><strong>Cache Hit:</strong> Recupera dados da RAM instantaneamente (Zero processamento).</li>
+    <li><strong>Cache Miss:</strong>
+      <ul>
+        <li>Salva estado atual.</li>
+        <li>Envia para FPGA processar.</li>
+        <li>Realiza <em>Read Back</em> da região processada.</li>
+        <li>Atualiza o Cache.</li>
+      </ul>
+    </li>
+    <li><strong>Overlay:</strong> Restaura o background original e sobrescreve apenas a janela de zoom, criando a interface gráfica.</li>
+  </ol>
+  
+  <h4>5. Interação com Mouse (Linux Input Subsystem)</h4>
+  <p>Acesso direto aos arquivos de dispositivo (<code>/dev/input/event*</code>) via <code>find_and_open_mouse</code>:</p>
+  <ul>
+    <li>Lê estruturas <code>input_event</code> cruas (low-level).</li>
+    <li>Filtra <code>EV_REL</code> para calcular coordenadas virtuais X/Y.</li>
+    <li>Filtra <code>EV_KEY</code> para detectar cliques.</li>
+  </ul>
+  
+  <h4>6. Loop Principal (Main)</h4>
+  <p>Um loop infinito clássico de sistemas embarcados:</p>
+  <ul>
+    <li><strong>Renderiza Menu:</strong> Interface de console.</li>
+    <li><strong>Input Blocking:</strong> Aguarda comando do usuário.</li>
+    <li><strong>Dispatcher:</strong> Switch/Case roteando funções.</li>
+    <li><strong>Gestão de Flags:</strong> Protege o sistema contra estados inválidos (ex: checando <code>Min_Zoom</code>/<code>Max_Zoom</code>).</li>
+  </ul>
+  
+  <hr>
+  
+  <blockquote>
+    <p><strong>Resumo Técnico:</strong> O código C atua como um <strong>Gerenciador de Fluxo e Memória</strong> que prepara dados (BMP &#8594; Array), orquestra o tempo de execução (Trigger &#8594; Wait &#8594; Read), gerencia a visualização (Overlay) e trata exceções do sistema.</p>
+  </blockquote>
+  
+  <div align="center">
+    <img src="https://github.com/user-attachments/assets/9ab50ed8-e8fe-4440-97d5-dd39f734f204" alt="Figura. Fluxo de dados" width="50%">
+    <br><sub>Figura. Fluxo de dados geral</sub>
   </div>
 
 </details>
+
+<details>
+  <br>
+    <div align="center">
+  <img src="https://github.com/user-attachments/assets/9f7a6a27-a91d-4ca5-b496-e6e6f30ad62b" width="50%" /> 
+    
+  <br><sub>Figura: Diagrama da do verilog </sub>
+  </div>
+  <summary><strong>Arquitetura do Verilog</strong></summary>
+  <p>
+   O sistema é classificado como uma <strong>Arquitetura de Acelerador Dedicado com Memória Compartilhada e Gerenciamento de Vídeo Integrado</strong>. O design segue o modelo <em>Control-Datapath</em>, com uma especialização crítica no gerenciamento de endereçamento.
+  </p>
+
+<h4>1. Plano de Controle (UC - Unidade de Controle)</h4>
+<p>O "cérebro" do sistema, implementado como uma Máquina de Estados Finitos (FSM).</p>
+<ul>
+  <li><strong>Função:</strong> Orquestra a sincronização de todos os módulos. A UC não processa pixels; ela gerencia sinais de controle.</li>
+  <li><strong>Interface:</strong> Recebe o <code>INSTRUCTION</code> (Opcode) do processador Host e dispara sinais de escrita (<code>WrEn</code>), seleção de Muxes e modos de operação.</li>
+  <li><strong>Feedback:</strong> Monitora e exporta flags de status (<code>Done</code>, <code>Error</code>, <code>Max/Min Zoom</code>) para o módulo <code>PIO FLAGS</code>.</li>
+</ul>
+
+<h4>2. Unidade de Controle de Endereçamento (ACU)</h4>
+<p>Um diferencial arquitetural que remove a complexidade de cálculo de endereços da FSM principal.</p>
+<ul>
+  <li><strong>Arquitetura:</strong> Gerador de Endereços Programável.</li>
+  <li><strong>Função:</strong> Abstrai a navegação na memória. Para algoritmos como Zoom, onde o acesso não é linear, a ACU traduz comandos de alto nível (<code>Step</code>, <code>Op</code>) em endereços físicos de leitura e escrita simultâneos para as memórias.</li>
+</ul>
+
+<h4>3. Hierarquia de Memória (Arquitetura Tri-Buffer)</h4>
+<p>O sistema utiliza três bancos de memória distintos para segregar responsabilidades:</p>
+<ul>
+  <li><strong>Mem A (Input/Work Buffer):</strong> Armazenamento primário da imagem a ser processada e fonte principal de dados para a unidade de execução.</li>
+  <li><strong>Mem C (Swap/Intermediate Buffer):</strong> Armazena resultados temporários, permitindo operações complexas que não podem ser feitas <em>in-place</em>.</li>
+  <li><strong>Mem B (Video RAM / Framebuffer):</strong> Possui arquitetura de acesso duplo implícita. Uma porta de escrita controlada pelo sistema e uma porta de leitura contínua dedicada exclusivamente ao <strong>VGA Controller</strong>, isolando o domínio de vídeo do processamento (evitando <em>screen tearing</em> ou <em>flicker</em>).</li>
+</ul>
+
+<h4>4. Unidade de Execução de Algoritmos (UAE)</h4>
+<p>O núcleo aritmético (ALU especializada) do acelerador.</p>
+<ul>
+  <li><strong>Fluxo de Dados:</strong> Recebe um pixel bruto da Memória A, aplica a lógica combinacional do filtro selecionado (ex: Nearest Neighbor) baseado no sinal <code>OP UAE</code>, e entrega o pixel transformado para a Memória C.</li>
+  <li><strong>Desacoplamento:</strong> A UAE processa fluxos de dados sem conhecimento de endereços, delegando a localização espacial para a ACU.</li>
+</ul>
+
+<h4>5. Subsistema de Vídeo (VGA)</h4>
+<p>Opera paralelamente ao processamento:</p>
+<ul>
+  <li><strong>VGA Controller:</strong> Gera sinais de sincronismo (HSync/VSync) e coordenadas de varredura (<code>Next_x</code>, <code>Next_y</code>).</li>
+  <li><strong>Acesso Direto:</strong> Lê diretamente da <code>Mem B</code> para converter dados digitais em sinais de cor (<code>Color_out</code>) para o DAC.</li>
+</ul>
+
+<h4>6. Interface de I/O (Memory Mapped)</h4>
+<p>A comunicação com o Host (CPU) é feita via sinais digitais diretos (PIO):</p>
+<ul>
+  <li><strong>Entrada:</strong> Sinais como <code>ADDR MEM</code> e <code>INSTRUCTION</code> configuram o sistema.</li>
+  <li><strong>Multiplexação de Saída:</strong> Um conjunto de Muxes (Multiplexadores) permite que a CPU leia resultados tanto da Memória C quanto da Memória A, ou roteie dados entre as memórias internas.</li>
+</ul>
+
+<hr>
+
+<blockquote>
+  <p><strong>Resumo do Pipeline:</strong> A arquitetura funciona em estágios: <strong>(1) Configuração</strong> (Carga de dados na Mem A/B), <strong>(2) Processamento</strong> (UC comanda ACU+UAE movendo dados de A &#8594; C) e <strong>(3) Write-Back/Display</strong> (Dados processados movem-se de C &#8594; B para vídeo ou leitura da CPU).</p>
+</blockquote>
+</details>
+
 <br>
-<h1 id="algoritmos">Algoritmos da API 🔻</h1>
+<h1 id="algoritmos">Detalhamento dos algoritmos🔻</h1>
 <br>
 
 <details>
@@ -767,7 +788,54 @@ typedef struct {
     <li><strong>Dedução:</strong> O uso da Opção 9 ("Zoom Regional") foi o teste de integração final, validando se o recorte da memória (software) coincidia com a área que o usuário via na tela.</li>
   </ul>
   
-  
+</details>
+
+<details>
+  <summary><strong>Problemas encontrados (e corrigidos)</strong></summary>
+<br>
+<p>
+Durante o desenvolvimento e testes de integração Hardware/Software, dois problemas principais foram identificados e mitigados:
+</p>
+
+<h4>1. Bloqueio de Execução no <code>wait_for_enter()</code></h4>
+<ul>
+  <li><strong> O Problema:</strong> O programa pausava inesperadamente ou exigia que o usuário pressionasse "Enter" duas vezes para prosseguir após certas operações.</li>
+  <li><strong> Causa Técnica:</strong> A função <code>wait_for_enter()</code> chamava internamente <code>clear_input_buffer()</code>. Como o buffer já havia sido limpo após o <code>scanf</code> anterior (consumindo inclusive o <code>\n</code>), o comando <code>getchar()</code> subsequente ficava aguardando uma <em>nova</em> entrada de dados que não era necessária, travando o fluxo.</li>
+  <li><strong> Solução:</strong> Refatoração da função <code>wait_for_enter()</code>. A chamada redundante de limpeza foi removida, assumindo que o buffer é gerido corretamente logo após as leituras de input no loop principal.</li>
+</ul>
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/e3e04e63-13c3-4940-b1e5-d2fd3426e99b"  alt="Trecho do erro">
+  <br><sub>Figura: Trecho do erro</sub>   
+</div>
+
+<br>
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/af924470-375e-434f-aac5-189441b808db"  alt="Trecho do erro">
+
+  <br><sub>Figura: Trecho corrigido</sub> 
+</div>
+
+
+<h4>2. Instabilidade de Pixels em Requisições Rápidas (Zoom Burst)</h4>
+<ul>
+  <li><strong> O Problema:</strong> Ao pressionar a tecla de Zoom In (<code>+</code>) repetidamente em um curto intervalo de tempo, a imagem resultante na FPGA apresentava falhas de escrita ou pixels corrompidos.</li>
+  <li><strong> Causa Técnica:</strong> O barramento de comunicação com a VRAM da FPGA não utiliza <em>pipelining</em> para o fluxo de comandos de zoom. O envio de múltiplos comandos consecutivos ("spamming" de teclas) causava uma condição de corrida (<em>race condition</em>), onde uma nova operação de leitura/escrita interrompia a anterior antes de sua conclusão.</li>
+  <li><strong> Solução:</strong> Restrição operacional no fluxo de uso. O sistema requer que o usuário aguarde a conclusão visual do processamento (renderização do frame) antes de solicitar o próximo nível de zoom, garantindo a integridade dos dados na memória.</li>
+</ul>
+  <div align="center">
+  <img src="https://github.com/user-attachments/assets/2d8c0104-fc2d-4957-8d5b-72c05366a0a5"  alt="Trecho do erro"> 
+
+  <br><sub>Gif: Bug do zoom no monitor</sub> 
+</div>
+
+  <div align="center"> 
+
+  <img src="https://github.com/user-attachments/assets/c85cbbe9-ddfd-49ec-a65f-c397002b4372"  alt="Trecho do erro"> 
+
+  <br><sub>Gif: Zoom peformando da meneira ideal</sub> 
+</div>
 
 </details>
 <br>
@@ -785,65 +853,33 @@ typedef struct {
   
   <p align="justify">&emsp;Tendo acessado o local da placa, cole a sua pasta lá!</p>
 
-  <div align="center">
-    <img src="LINK_DA_FOTO_COPIAR_ARQUIVOS" alt="Copiando arquivos via SSH" width="60%">
-    <br><sub>Exemplo de conexão via gerenciador de arquivos</sub>
-  </div>
 
-
-  <h3>Como compilar e rodar na placa?</h3>
+  <h3 id="GuiaQuartus">Como compilar e rodar na placa?</h3>
   
   <h4>Passo 01: Compilação</h4>
   <p align="justify">&emsp;Abra o arquivo <code>soc_system.qpf</code> no Quartus II, clique em <strong>“Start Compilation”</strong> e aguarde a compilação terminar.</p>
-     <img src="https://github.com/user-attachments/assets/346217a7-972c-45cc-91f1-dafa711e4328" alt="Interface do Quartus " width="70%"> 
+  <div align="center">
+    <img src="https://github.com/user-attachments/assets/8917c2ea-8ee0-44b2-9fa2-7fc765f6d08e" alt="Acesso ao Quartus Programmer" width="70%">
+    <br><sub>Página principal do Quartus</sub>
+  </div> 
+  
   <h4>Passo 02: Acessar o Programador</h4>
   <p align="justify">&emsp;Após compilado, abra o menu <strong>Programmer</strong> (Tools > Programmer).</p>
-
-  <h4>Passo 03: Detecção e Configuração</h4>
-  <p align="justify">&emsp;Selecione a placa na opção <strong>Auto Detect</strong>, depois marque a opção <strong>Program/Configure</strong>. Se a opção não estiver disponível, clique em “Add File” e selecione o arquivo <code>.sof</code> gerado na pasta output_files.</p>
-
+  
   <div align="center">
     <img src="https://github.com/user-attachments/assets/f2663426-99f8-4fda-beb2-36049b5b8727" alt="Acesso ao Quartus Programmer" width="70%"> 
     <br><sub>Interface do Programmer configurada</sub>
   </div>
 
-  <h4>Passo 04: Upload</h4>
-  <p align="justify">&emsp;Pressione <strong>Start</strong>. Quando a barra de progresso atingir 100%, o seu código de hardware estará rodando na placa!</p>
 
-    <img src="https://github.com/user-attachments/assets/671b1279-4758-4518-b7db-3df75c8774d3" alt="Interface do Quartus Programmer" width="70%"> 
-
-  <h3>Como acessar minha placa no terminal?</h3>
-  <p align="justify">&emsp;Para interagir com o sistema, abra o terminal do seu computador e utilize o comando SSH:</p>
-  <pre>ssh root@IP_DA_SUA_PLACA</pre>
-  <p align="justify">&emsp;Insira a senha (padrão geralmente é <code>terasic</code> ou vazia) e navegue até a pasta que você copiou anteriormente.</p>
-
-
-  <h3>Interface e Fluxo de Uso</h3>
-  <p align="justify">&emsp;Abaixo, o fluxo de operação do sistema, mostrando o Menu Principal no terminal (HPS) e o resultado visual no Monitor (FPGA).</p>
-
+  <h4>Passo 03: Detecção e Configuração</h4>
+  <p align="justify">&emsp;Selecione a placa na opção <strong>Auto Detect</strong>, depois marque a opção <strong>Program/Configure</strong>. Se a opção não estiver disponível, clique em “Add File” e selecione o arquivo <code>.sof</code> gerado na pasta output_files.</p>
   <div align="center">
-    <table border="0" width="100%">
-      <tr>
-        <td align="center" width="50%">
-          <img src="LINK_DA_FOTO_MAIN_MENU" alt="Menu Principal no Terminal" width="95%">
-          <br><sub>Menu interativo no Terminal</sub>
-        </td>
-        <td align="center" width="50%">
-[Image of VGA monitor displaying image]
-          <img src="LINK_DA_FOTO_MONITOR_VGA" alt="Resultado no Monitor VGA" width="95%">
-          <br><sub>Processamento no Monitor VGA</sub>
-        </td>
-      </tr>
-    </table>
+    <img src="https://github.com/user-attachments/assets/671b1279-4758-4518-b7db-3df75c8774d3" alt="Acesso ao Quartus Programmer" width="70%"> 
+    <br><sub>Interface do Programmer configurada</sub>
   </div>
-
-
-  <h3>Entendendo a Placa</h3>
-  <p align="justify">&emsp;Para referência rápida sobre os botões, chaves e conexões utilizados durante o uso:</p>
   
-  <div align="center">
-  [Image of DE1-SoC board components diagram]
-    <img src="LINK_DA_FOTO_ENTENDENDO_A_PLACA" alt="Layout da DE1-SoC" width="70%">
-  </div>
+  <h4>Passo 04: Upload</h4>
+  <p align="justify">&emsp;Pressione <strong>Start</strong>. Quando a barra de progresso atingir 100%, o coprocessador estará na placa!</p>
 
-</details>
+
