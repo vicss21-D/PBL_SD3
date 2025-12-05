@@ -9,7 +9,6 @@
 <div>
   <details>
     <summary><h1>Sumário</h1></summary>
-
     <h2>1. <a href="#sobre">Sobre o Projeto</a></h2>
     <ul>
       <li>Definição do problema</li>
@@ -17,7 +16,6 @@
       <li>Colaboradores</li>
       <li>Referências</li>
     </ul>
-
     <h2>2. <a href="#requisitos">Requisitos do Sistema</a></h2>
     <h3>Hardware, Software e Dependências</h3>
     <ul>
@@ -32,7 +30,6 @@
       <li><strong>Teclado</strong>: Lenovo KU-1619 (USB)</li>
       <li><strong>Monitor</strong>: Philips 191EL (VGA 19")</li>
     </ul>
-
     <h2>3. <a href="#instalacao">Instalação e Execução</a></h2>
     <h3>Guia Passo a Passo</h3>
     <ul>
@@ -52,7 +49,6 @@
       <li>Carregamento de imagens BMP</li>
       <li>Zoom regional interativo com mouse</li>
     </ul>
-
     <h2>4. <a href="#softwares">Softwares e Tecnologias Utilizados</a></h2>
     <h3>Ferramentas de Desenvolvimento</h3>
     <ul>
@@ -70,7 +66,6 @@
       <li>Integração via FPGA Bridges</li>
       <li>Protocolo AXI</li>
     </ul>
-
     <h2>5. <a href="#processador">Arquitetura do Sistema</a></h2>
     <h3>Arquitetura em Camadas</h3>
     <ul>
@@ -89,7 +84,6 @@
       <li>Arquitetura do Assembly (Driver MMIO)</li>
       <li>Arquitetura do Verilog (FSM + ACU + Memória Tri-Buffer)</li>
     </ul>
-
     <h2>6. <a href="#algoritmos">Detalhamento dos Algoritmos</a></h2>
     <h3>Módulos em C</h3>
     <ul>
@@ -109,7 +103,6 @@
         </ul>
       </li>
     </ul>
-
     <h2>7. <a href="#testes">Testes e Validação</a></h2>
     <h3>Metodologia de Validação</h3>
     <ul>
@@ -124,7 +117,6 @@
       <li>Bloqueio de execução no <code>wait_for_enter()</code></li>
       <li>Instabilidade de pixels em requisições rápidas</li>
     </ul>
-
     <h2>8. <a href="#howto">Guia de Utilização</a></h2>
     <ul>
       <li>Guia de operação e uso</li>
