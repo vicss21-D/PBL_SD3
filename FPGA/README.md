@@ -156,7 +156,7 @@ O sistema atingiu os objetivos, carregando BMPs e aplicando zoom em tempo real n
 <div align="center">
   <img src="https://github.com/user-attachments/assets/0924b4f7-84e0-4bea-bc96-03bc1e301bcc" alt="Funcionamento VGA" width="600px"> 
 
-  <p><em>Fig 2: Sistema em operação na janela padrão de 320x140 </em></p>
+  <p><em>Fig 2: Sistema em operação na janela padrão de 320x240 </em></p>
 </div>
 
 ### 🛠️ Problemas e Correções (Troubleshooting)
